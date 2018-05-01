@@ -101,14 +101,12 @@ class Puzzle(object):
                         self.__combinations[piece_idx].append(Combination(
                                                               position, 
                                                               combination))
-                        combination_count += 1
-                    else:
-                        combination_count += len(self.__pieces[piece_idx]
-                                                 .positions)
+                combination_count += len(self.__pieces[piece_idx].positions)
                 progress.progress(combination_count, self.__total_combinations,
                                   "Piece {} on {}: {} combinations done"
                                   .format(piece_idx + 1, len(self.__pieces), 
                                   combination_count))
+        print("")        
     
     def output_solutions(self):
         """Method: output the solutions if we have some"""
