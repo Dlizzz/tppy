@@ -7,13 +7,7 @@
 """
 
 # Standards imports
-from collections import namedtuple
 import numpy
-
-# Class factory
-# Position is a tuple of position indexes and board
-PositionIndex = namedtuple("PositionIndex", ["piece", "position"])
-Position = namedtuple("Position", ["index", "board"])
 
 # Class definition
 class Piece(object):
@@ -35,9 +29,8 @@ class Piece(object):
         self.positions = [] 
 
     def generate_positions(self, piece_idx, board_rows, board_columns):
-        """Methods: generate piece positions for the given board"""
+        """Methods: generate piece positions for the given board."""
         # Loop over all patterns
-        position_idx = 0
         for pattern in self.__patterns:
             # Loop over the board cells
             pattern_rows = pattern.shape[0]
@@ -47,16 +40,12 @@ class Piece(object):
             for column in range(columns_range):
                 for row in range(rows_range):
                     # Create new position
-                    index = PositionIndex(piece_idx, position_idx)
-                    position = Position(index, numpy.zeros((board_rows, 
-                                        board_columns)))
+                    board = numpy.zeros((board_rows, board_columns))
                     # Copy the pattern in the newly created position
-                    position.board[row:row + pattern_rows,
-                                   column:column + pattern_columns] += pattern
+                    board[row:row + pattern_rows,
+                          column:column + pattern_columns] += pattern
                     # Add it to the position stack                      
-                    self.positions.append(position)                    
-                    # Move to next position
-                    position_idx += 1
+                    self.positions.append(board)                    
 
 # Pieces definition
 pieces_set = {

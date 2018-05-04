@@ -22,7 +22,6 @@
 """
 
 # Standards imports
-import os
 import tpparam
 import tppieces
 import tppuzzle
@@ -61,7 +60,7 @@ def main():
         puzzle.add_piece(tppieces.pieces_set["Step right"])
     for _ in range(args.step_left):
         puzzle.add_piece(tppieces.pieces_set["Step left"])
- 
+
     # Solve the puzzle
     puzzle.solve()
 

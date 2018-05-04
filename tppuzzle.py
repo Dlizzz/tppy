@@ -6,35 +6,12 @@
         talos-puzzle puzzle definition
 """
 import numpy
+import time
 import copy
 import tppieces
 import progress
 
 # Class definition
-class Combination(object):
-    """Class: define a combination of positions, keeping history of 
-       construction and status as a valid combination or not"""
-    def __init__(self, position, combination = None):
-        """Constructor: initialize the combination by adding position to 
-           existing given combination, if it exists"""
-        # Public members
-        if combination is None:
-            # No initial combination, so start with position
-            self.board = numpy.copy(position.board)
-            self.combined_positions = [position.index]
-        else:
-            # Copy given combination
-            self.board = numpy.copy(combination.board)
-            # Add position to combination
-            self.board += position.board
-            # Copy combination history
-            self.combined_positions = copy.deepcopy(combination
-                                                    .combined_positions)
-            # Add position to history
-            self.combined_positions.append(position.index)
-        # Is it a valid position ?
-        self.isvalid = numpy.max(self.board) <= 1
-    
 class Puzzle(object):
     """Class: game board and stack of solutions"""
     def __init__(self, rows=0, columns=0, verbose=False):
@@ -74,20 +51,19 @@ class Puzzle(object):
 
     def solve(self):
         """Method: solve the puzzle by going trhough all combinations of pieces
-           positions"""
+           positions. Combination is a tuple (board, isvalid, position1, 
+           position2, ...) with one position per piece"""
         if self.__verbose:
-            print("Info: testing {} combinations of positions in total !"
-                  .format(self.__total_combinations))
-        # Start with first piece, with no previous combination
+            print("Info: testing {:,d} combinations of positions in total !"
+                  .format(self.__total_combinations).replace(",", " "))
         # Add a new stack of combinations
+        # Start with first piece, with no previous combination, all 
+        # combinations are valid
+        start = time.time()
         self.__combinations.append([])
-        combination_count = 0
-        for position in self.__pieces[0].positions:
-            self.__combinations[0].append(Combination(position))
-            combination_count += 1
-            progress.progress(combination_count, self.__total_combinations,
-                              "Piece 1 on {}: {} combinations done"
-                              .format(len(self.__pieces), combination_count))
+        for position_idx, position in self.__pieces[0].positions:
+            board = numpy.copy(position)
+            self.__combinations[0].append((board, True, position_idx))
         # Continue with the rest of pieces
         for piece_idx in range(1, len(self.__pieces)):
             # Add a new stack of combinations
@@ -96,23 +72,33 @@ class Puzzle(object):
             for combination in self.__combinations[piece_idx - 1]:
                 # Combine each previous combination with all positions of piece
                 # only if it's a valid combination
-                if combination.isvalid:
-                    for position in self.__pieces[piece_idx].positions:
-                        self.__combinations[piece_idx].append(Combination(
-                                                              position, 
-                                                              combination))
-                combination_count += len(self.__pieces[piece_idx].positions)
-                progress.progress(combination_count, self.__total_combinations,
-                                  "Piece {} on {}: {} combinations done"
-                                  .format(piece_idx + 1, len(self.__pieces), 
-                                  combination_count))
-        print("")        
+                if combination[1]:
+                    # Combination is valid
+                    for position_idx, position in self.__pieces[piece_idx] \
+                                                      .positions:
+                        # Copy the previous combination
+                        board = numpy.copy(combination[0])
+                        # Add the current position
+                        board += position
+                        # Test if valid combination
+                        isvalid = (numpy.max(board) <= 1)
+                        # Add position index to the list
+                        combination_new = (board, isvalid) + position[2:] \
+                                          + tuple(position_idx)
+                        self.__combinations[piece_idx].append(combination_new)
+        stop = time.time()
+        if self.__verbose:
+            print("Info: Time spent in solving puzzle: {:,.2f} secondes"
+                  .format(stop - start).replace(",", " "))
     
     def output_solutions(self):
         """Method: output the solutions if we have some"""
         # Report solutions (valid combinations for last piece)
         for combination in self.__combinations[-1]:
-            if combination.isvalid:
-                for p in combination.combined_positions:
-                    print(self.__pieces[p.piece].positions[p.position].board)
+            if combination[1]:
+                # Combination is valid, that's a solution
+                for piece_idx, piece in self.__pieces:
+                    # Get the position for each piece, sequentially stored in
+                    # combination, starting at element 3
+                    print(piece.positions[combination[piece_idx + 2]])
                     print("----")
