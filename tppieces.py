@@ -28,7 +28,7 @@ class Piece(object):
         # When added to a puzzle, a piece has positions
         self.positions = [] 
 
-    def generate_positions(self, piece_idx, board_rows, board_columns):
+    def generate_positions(self, board_rows, board_columns):
         """Methods: generate piece positions for the given board."""
         # Loop over all patterns
         for pattern in self.__patterns:

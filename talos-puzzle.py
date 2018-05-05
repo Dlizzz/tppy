@@ -65,7 +65,7 @@ def main():
     puzzle.solve()
 
     # Print the solutions
-    puzzle.output_solutions()
+    puzzle.solutions()
      
 # Main
 if __name__ == "__main__":

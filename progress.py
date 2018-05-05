@@ -38,3 +38,21 @@ def progress(count, total, status=''):
     sys.stdout.write('[%s] %s%s ...%s\r' % (bar, percents, '%', status))
     sys.stdout.flush()
 
+def working(run=False, speed=1.0):
+    if not run:
+        print("\n")
+        return
+
+    CHAR_SET = "|/-\\"
+
+    try:
+        if speed == 0:
+            speed = 1.0
+        working.step += (1.0 / speed)
+        if working.step >= len(CHAR_SET):
+            working.step = 0.0
+    except AttributeError:
+        working.step = 0.0
+
+    sys.stdout.write('%s\r' % (CHAR_SET[int(working.step)]))
+    sys.stdout.flush()
