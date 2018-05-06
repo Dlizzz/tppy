@@ -6,12 +6,14 @@
         talos-puzzle puzzle definition
 """
 import os
+import sys
 import numpy
 import time
 import copy
 import tppieces
 import tpimages
 from PIL import ImageColor
+from collections import namedtuple
 
 # Class definition
 class Puzzle(object):
@@ -31,19 +33,22 @@ class Puzzle(object):
                              args.columns, args.l_right, args.l_left, args.tee,
                              args.bar, args.square, args.step_right, 
                              args.step_left))
-        # Game board dimensions
+        # Game board dimensions and board
         self.__board_rows = args.rows
         self.__board_columns = args.columns
+        self.__board = numpy.zeros((args.rows, args.columns), numpy.uint8)
         # Stack of pieces with positions
         self.__pieces = []
-        # Stack of stack of combinations (by pieces then combinations)
-        self.__combinations = []
-        # Combinations count
-        self.__combinations_count = 1
-        # Solutions with label (to remove duplicated solutions)
-        self.__solutions = []
+        # Tree path, stack of tuples(piece_idx, position_idx)
+        self.__tree_path = []
+        # Solution nodes, stack of stack of valid tree path
+        self.__solutions_nodes = [] 
+        # Solutions with label to remove duplicates
+        self.__solutions_label = []
         # Solutions with pieces index to draw solution
         self.__solutions_pieces = []
+        # Total combinations count
+        self.__combinations_count = 1
         if self.__verbose:
             print("Info: Create puzzle with {} rows and {} columns."
                   .format(self.__board_rows, self.__board_columns))
@@ -54,6 +59,33 @@ class Puzzle(object):
                       "with a cell size of {}."
                       .format(self.__output_dir, self.__cell_size))
   
+    def __tree_path_backward(self):
+        """Method (protected): go backward on the tree path, until we find 
+           a node with a possible next position, then recreate the board at 
+           this node. Return false if we can't find a next position anymore"""
+        while True:
+            # Next position for current node
+            piece_idx = self.__tree_path[-1][0]
+            position_idx = self.__tree_path[-1][1] + 1
+            # Move to previous node, if it exists
+            self.__tree_path.pop()
+            if self.__tree_path == []:
+                # No more node, can't go backward
+                backward_status = False
+                break
+            # If we have a next position
+            if position_idx < len(self.__pieces[piece_idx].positions):
+                # Recreate the board at the new node and return ok
+                self.__board = numpy.zeros((self.__board_rows, 
+                                           self.__board_columns),
+                                           numpy.uint8)
+                for node in self.__tree_path:
+                    self.__board += self.__pieces[node[0]].positions[node[1]]
+                backward_status = True
+                break
+            # Else continue backward in tree path 
+        return (backward_status, piece_idx, position_idx)
+        
     def add_piece(self, piece):
         """Method: add a piece, with all its possible positions on the board, 
         to the puzzle piece stack"""
@@ -71,84 +103,108 @@ class Puzzle(object):
 
     def solve(self):
         """Method: solve the puzzle by going trhough all combinations of pieces
-           positions. Combination is a tuple (board, isvalid, position1, 
-           position2, ...) with one position per piece"""
+           positions, moving horizontally in the tree, i.e. each time we have a
+           valid combination for a piece, test it with the next piece 
+           positions."""
         if self.__verbose:
             print("Info: testing {:,d} combinations of positions in total !"
                   .format(self.__combinations_count).replace(",", " "))
-        # Add a new stack of combinations
-        # Start with first piece, with no previous combination, all 
-        # combinations are valid
+        # Each position of the first piece is a tree root
         start = time.time()
-        self.__combinations.append([])
-        for position_idx, position in enumerate(self.__pieces[0].positions):
-            board = numpy.copy(position)
-            self.__combinations[0].append((board, True, position_idx))
-        # Continue with the rest of pieces
-        for piece_idx in range(1, len(self.__pieces)):
-            # Add a new stack of combinations
-            self.__combinations.append([])
-            # Go through all previous combinations
-            for combination in self.__combinations[piece_idx - 1]:
-                # Combine each previous combination with all positions of piece
-                # only if it's a valid combination
-                if combination[1]:
-                    # Combination is valid
-                    for position_idx, position in (enumerate(
-                                                   self.__pieces[piece_idx]
-                                                   .positions)):
-                        # Copy the previous combination
-                        board = numpy.copy(combination[0])
-                        # Add the current position
-                        board += position
-                        # Test if valid combination
-                        isvalid = (numpy.max(board) <= 1)
-                        # Add position index to the list
-                        combination_new = ((board, isvalid) + combination[2:]
-                                          + (position_idx,))
-                        self.__combinations[piece_idx].append(combination_new)
+        for position_idx in range(len(self.__pieces[0].positions)):          
+            # Starting node in the tree
+            self.__tree_path = [(0, position_idx)]
+            # Init the board with root position
+            self.__board = numpy.copy(self.__pieces[0].positions[position_idx])
+            # Go through the tree, starting at first position of next piece
+            test_piece_idx = 1
+            test_position_idx = 0
+            while True:
+                # backup board and add next position to board and test it
+                backup_board = numpy.copy(self.__board)
+                self.__board += (self.__pieces[test_piece_idx]
+                                 .positions[test_position_idx])
+                if numpy.max(self.__board) <= 1:
+                    # We have a valid combination, save the node in tree path
+                    self.__tree_path.append((test_piece_idx, 
+                                             test_position_idx))
+                    if self.__verbose:
+                        print("{}".format(" "*80), end="\r", flush=True)
+                        print(self.__tree_path, end="\r", flush=True)
+                    # Can we move to next piece ?
+                    if (test_piece_idx + 1) == len(self.__pieces):
+                        # No more pieces, then we have a solution
+                        # Save the tree path as a solution
+                        self.__solutions_nodes.append(self.__tree_path.copy())
+                        # Remove the last position added
+                        self.__tree_path.pop()
+                        # and go backward on the path, if we can
+                        node = self.__tree_path_backward()
+                        if not node[0]:
+                            # No more node in the path, end of the tree
+                            break
+                        else:
+                            test_piece_idx = node[1]
+                            test_position_idx = node[2]                        
+                    else:
+                        # Move to next piece, first position
+                        test_piece_idx += 1
+                        test_position_idx = 0 
+                else:
+                    # Not a valid combination, move to next position, 
+                    # if it exists
+                    if ((test_position_idx + 1) 
+                        == len(self.__pieces[test_piece_idx].positions)):
+                        # No more position for the piece
+                        # Go backward on the path, if we can
+                        node = self.__tree_path_backward()
+                        if not node[0]:
+                            # No more node in the path, end of the tree
+                            break
+                        else:
+                            test_piece_idx = node[1]
+                            test_position_idx = node[2]                        
+                    else:
+                        # Restore the board
+                        self.__board = numpy.copy(backup_board)
+                        test_position_idx += 1
         stop = time.time()
         if self.__verbose:
+            print()
             print("Info: Time spent in solving puzzle: {:,.2f} secondes"
                   .format(stop - start).replace(",", " "))
-    
+
     def solutions(self):
         """Method: output the solutions if we have some"""
-        # Report solutions (valid combinations for last piece)
-        for combination in self.__combinations[-1]:
-            if combination[1]:
-                # Combination is valid, that's a solution
-                solution = [["" 
-                            for col 
-                            in range(self.__board_columns)] 
-                            for row 
-                            in range(self.__board_rows)]
-                solution_pieces = [[0 
-                                    for col 
-                                    in range(self.__board_columns)] 
-                                    for row 
-                                    in range(self.__board_rows)]
-                for piece_idx, piece in enumerate(self.__pieces):
-                    # Get the position for each piece, sequentially stored in
-                    # combination, starting at element 3
-                    position_idx = combination[piece_idx + 2]
-                    for row in range(self.__board_rows):
-                        for col in range(self.__board_columns): 
-                            if piece.positions[position_idx][row][col] == 1:
-                                solution[row][col] = piece.label
-                                solution_pieces[row][col] = piece_idx
-                if solution not in self.__solutions:
-                    # Add solution if not already existing
-                    self.__solutions.append(solution)
-                    self.__solutions_pieces.append(solution_pieces)
-                    print("Solution:\n--------", *solution, sep="\n ")
-        if len(self.__solutions) != 0:
+        # Output solutions       
+        for solution in self.__solutions_nodes:
+            solution_label = [["" 
+                               for col in range(self.__board_columns)] 
+                               for row in range(self.__board_rows)]
+            solution_pieces = [[0 
+                                for col in range(self.__board_columns)] 
+                                for row in range(self.__board_rows)]
+            for node in solution:
+                position = self.__pieces[node[0]].positions[node[1]]
+                for row in range(self.__board_rows):
+                    for column in range(self.__board_columns):
+                        if position[row][column] == 1:
+                            solution_label[row][column] = self.__pieces[
+                                                          node[0]].label
+                            solution_pieces[row][column] = node[0]
+            if solution_label not in self.__solutions_label:
+                # Add solution if not already existing
+                self.__solutions_label.append(solution_label)
+                self.__solutions_pieces.append(solution_pieces)
+                print("Solution:\n--------", *solution_label, sep="\n ")
+        # Report solutions
+        if len(self.__solutions_label) != 0:
             print("Puzzle solved ! Found {} unique solutions"
-                  .format(len(self.__solutions)))
+                  .format(len(self.__solutions_label)))
         else:
             print("No solution found for the puzzle !")
-            exit(0)        
-        # Output images if asked
+            exit(0)
+        # Output images if needed
         if self.__images:
             # Create directory to store the images
             try:

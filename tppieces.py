@@ -16,10 +16,10 @@ class Piece(object):
         """Constructor: create the piece, with its patterns"""
         # Protected members
         # Stack of piece patterns
-        self.__patterns = [numpy.array(pattern)]
+        self.__patterns = [numpy.array(pattern, numpy.uint8)]
         for x in range(1, rotations_count):
-            self.__patterns.append(numpy.rot90(numpy.array(pattern), 
-            x, axes=(1, 0)))
+            self.__patterns.append(numpy.rot90(numpy.array(pattern, 
+                                   numpy.uint8), x, axes=(1, 0)))
         # Public members
         # Piece name
         self.name = name
@@ -40,7 +40,8 @@ class Piece(object):
             for column in range(columns_range):
                 for row in range(rows_range):
                     # Create new position
-                    board = numpy.zeros((board_rows, board_columns))
+                    board = numpy.zeros((board_rows, board_columns), 
+                                        numpy.uint8)
                     # Copy the pattern in the newly created position
                     board[row:row + pattern_rows,
                           column:column + pattern_columns] += pattern
