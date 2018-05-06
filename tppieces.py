@@ -51,7 +51,7 @@ class Piece(object):
 pieces_set = {
     "Square" : Piece("Square", "SQ", [(1, 1), (1, 1)]),
     "L right" : Piece("L right", "LR", [(1, 1), (1, 0), (1, 0)], 4),
-    "L left" : Piece("L left", "LF", [(1, 1), (0, 1), (0, 1)], 4),
+    "L left" : Piece("L left", "LL", [(1, 1), (0, 1), (0, 1)], 4),
     "Bar" : Piece("Bar", "BA", [(1, 1, 1, 1)], 2),
     "Tee" : Piece("Tee", "TE", [(0, 1, 0), (1, 1, 1)], 4),
     "Step right" : Piece("Step right", "SR", [(0, 1, 1), (1, 1, 0)], 2),

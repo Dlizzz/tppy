@@ -7,6 +7,8 @@
 """
 
 import argparse
+import os
+from PIL import ImageColor
 
 # Help text
 DESCRIPTION_TEXT = """Try to solve the given puzzle and print status
@@ -42,6 +44,18 @@ The puzzle can use the following pieces:
      XX
 The pieces can be flipped horizontally and vertically."""
 
+# Class
+class writeable_dir(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not os.path.isdir(values):
+            raise argparse.ArgumentTypeError("writeable_dir:{0} is not a " 
+                                             "valid path".format(values))
+        if os.access(values, os.W_OK):
+            setattr(namespace,self.dest,values)
+        else:
+            raise argparse.ArgumentTypeError("writeable_dir:{0} is not a "  
+                                             "writeable dir".format(values))
+
 # Functions
 def get_parameters():
     """ Parse command line arguments """
@@ -51,6 +65,8 @@ def get_parameters():
                                      RawDescriptionHelpFormatter)
     group_board = parser.add_argument_group("Board", "Board dimensions")
     group_pieces = parser.add_argument_group("Pieces", "Pieces list")
+    group_solutions = parser.add_argument_group("Solutions", 
+                                                "Solutions output")
     parser.add_argument("--verbose", 
         action="store_true", 
         help="Print progress status on stdout")
@@ -90,6 +106,23 @@ def get_parameters():
         type=int,
         default=0,
         help="Number of Step left shape pieces")
+    group_solutions.add_argument("--images",
+        action="store_true", 
+        help="Output solutions as png images")
+    group_solutions.add_argument("--output-dir",
+        action=writeable_dir,
+        default=os.getcwd(), 
+        help="Directory where to output png images")
+    group_solutions.add_argument("--cell-size",
+        type=int,
+        default=100,
+        help="Size in pixels of one cell of the board")
+    group_solutions.add_argument("--shape-color",
+        default="Yellow",
+        help="Color name (HTML) of the shape color")
+    group_solutions.add_argument("--fill-color",
+        default="DarkMagenta",
+        help="Color name (HTML) of the fill color")
     return parser.parse_args()
 
 def check_parameters(args):
@@ -126,5 +159,21 @@ def check_parameters(args):
         print("Fatal: Board size (rows x columns) must equal sum of" 
               + " pieces size (4)")
         exit(1)
+    if args.cell_size < 1:
+        print("Info: Cell size must be > 0 ! Using default size.")
+        args.cell_size = 100
+    try:
+        color = ImageColor.getrgb(args.shape_color)
+    except:
+        print("Info: Wrong color name for shape! Using default color.")
+        args.shape_color = "Yellow"
+    try:
+        color = ImageColor.getrgb(args.fill_color)
+    except:
+        print("Info: Wrong color name for fill! Using default color.")
+        args.fill_color = "DarkMagenta"
+
+
+    
             
  

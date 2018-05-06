@@ -5,34 +5,54 @@
     Description:
         talos-puzzle puzzle definition
 """
+import os
 import numpy
 import time
 import copy
 import tppieces
+import tpimages
+from PIL import ImageColor
 
 # Class definition
 class Puzzle(object):
     """Class: game board and stack of solutions"""
-    def __init__(self, rows=0, columns=0, verbose=False):
+    def __init__(self, args):
         """Constructor: create board with rows x columns dimension"""
         # Protected members
         # Do we have to be verbose
-        self.__verbose = verbose
+        self.__verbose = args.verbose
+        # Images output
+        self.__images = args.images      
+        self.__cell_size = args.cell_size
+        self.__fill_color = ImageColor.getrgb(args.fill_color)
+        self.__shape_color = ImageColor.getrgb(args.shape_color)
+        self.__output_dir = (args.output_dir + "\\Board {}R x {}C - {}LR {}LL "
+                             "{}TE {}BA {}SQ {}SR {}SL".format(args.rows, 
+                             args.columns, args.l_right, args.l_left, args.tee,
+                             args.bar, args.square, args.step_right, 
+                             args.step_left))
         # Game board dimensions
-        self.__board_rows = rows
-        self.__board_columns = columns
+        self.__board_rows = args.rows
+        self.__board_columns = args.columns
         # Stack of pieces with positions
         self.__pieces = []
         # Stack of stack of combinations (by pieces then combinations)
         self.__combinations = []
         # Combinations count
         self.__combinations_count = 1
-        # Solutions
+        # Solutions with label (to remove duplicated solutions)
         self.__solutions = []
+        # Solutions with pieces index to draw solution
+        self.__solutions_pieces = []
         if self.__verbose:
             print("Info: Create puzzle with {} rows and {} columns."
-                  .format(rows, columns))
-            print("Info: Board size is {}.".format(rows*columns))
+                  .format(self.__board_rows, self.__board_columns))
+            print("Info: Board size is {}.".format(self.__board_rows
+                                                   * self.__board_columns))
+            if self.__images:
+                print("Info: Solutions image will be generated in {} "
+                      "with a cell size of {}."
+                      .format(self.__output_dir, self.__cell_size))
   
     def add_piece(self, piece):
         """Method: add a piece, with all its possible positions on the board, 
@@ -103,6 +123,11 @@ class Puzzle(object):
                             in range(self.__board_columns)] 
                             for row 
                             in range(self.__board_rows)]
+                solution_pieces = [[0 
+                                    for col 
+                                    in range(self.__board_columns)] 
+                                    for row 
+                                    in range(self.__board_rows)]
                 for piece_idx, piece in enumerate(self.__pieces):
                     # Get the position for each piece, sequentially stored in
                     # combination, starting at element 3
@@ -111,7 +136,37 @@ class Puzzle(object):
                         for col in range(self.__board_columns): 
                             if piece.positions[position_idx][row][col] == 1:
                                 solution[row][col] = piece.label
+                                solution_pieces[row][col] = piece_idx
                 if solution not in self.__solutions:
+                    # Add solution if not already existing
                     self.__solutions.append(solution)
-                    print('Solution:', *solution, sep='\n ')
-                    print("----")
+                    self.__solutions_pieces.append(solution_pieces)
+                    print("Solution:\n--------", *solution, sep="\n ")
+        if len(self.__solutions) != 0:
+            print("Puzzle solved ! Found {} unique solutions"
+                  .format(len(self.__solutions)))
+        else:
+            print("No solution found for the puzzle !")
+            exit(0)        
+        # Output images if asked
+        if self.__images:
+            # Create directory to store the images
+            try:
+                os.makedirs(self.__output_dir,exist_ok=True)
+            except IOError:
+                print("Fatal: Can't create output directory {}"
+                      .format(self.__output_dir)) 
+                exit(1)
+            for solution_idx, solution in enumerate(self.__solutions_pieces, 
+                                                    1):
+                # Draw the solution
+                image = tpimages.draw_board(solution, self.__cell_size, 
+                                            self.__fill_color, 
+                                            self.__shape_color)
+                # Save the image
+                image_name = (self.__output_dir 
+                              + "\\Solution #{:0>2}.png".format(solution_idx))
+                try:
+                    image.save(image_name)
+                except:
+                    print("Fatal: Can't save image {}".format(image_name)) 

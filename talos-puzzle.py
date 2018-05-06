@@ -43,7 +43,7 @@ def main():
     tpparam.check_parameters(args)
 
     # Create board
-    puzzle = tppuzzle.Puzzle(args.rows, args.columns, args.verbose)
+    puzzle = tppuzzle.Puzzle(args)
 
     # Add pieces, from pieces set, to the puzzle
     for _ in range(args.square):
