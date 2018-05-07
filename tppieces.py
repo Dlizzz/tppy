@@ -45,8 +45,8 @@ class Piece(object):
                     # Copy the pattern in the newly created position
                     board[row:row + pattern_rows,
                           column:column + pattern_columns] += pattern
-                    # Add it to the position stack                      
-                    self.positions.append(board)                    
+                    # Add it to the position stack 
+                    self.positions.append(board)
 
 # Pieces definition
 pieces_set = {
