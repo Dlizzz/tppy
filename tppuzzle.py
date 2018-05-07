@@ -87,7 +87,18 @@ class Puzzle(object):
                 break
             # Else continue backward in tree path 
         return (backward_status, piece_idx, position_idx)
-        
+
+    def __print_tree_path(self):
+        """Method (protected): format and print the tree path"""
+        tree_path = ""
+        for piece_idx in range(len(self.__pieces)):
+            if piece_idx < len(self.__tree_path):
+                tree_path = tree_path + "[{: >3d}] ".format(piece_idx)
+            else:
+                tree_path = tree_path + "[   ] "
+        print("{}".format(" "*80), end="\r", flush=True)
+        print(tree_path, end="\r", flush=True)
+
     def add_piece(self, piece):
         """Method: add a piece, with all its possible positions on the board, 
         to the puzzle piece stack"""
@@ -122,6 +133,7 @@ class Puzzle(object):
                 # We have only one piece, all positions are solutions
                 # Save the tree path as a solution
                 self.__solutions_nodes.append(self.__tree_path.copy())
+                first_found = True
             else:
                 # Go through the tree, starting at first position 
                 # of next piece
@@ -138,14 +150,17 @@ class Puzzle(object):
                         self.__tree_path.append((test_piece_idx, 
                                                 test_position_idx))
                         if self.__verbose:
-                            print("{}".format(" "*80), end="\r", flush=True)
-                            print(self.__tree_path, end="\r", flush=True)
+                            self.__print_tree_path()
                         # Can we move to next piece ?
                         if (test_piece_idx + 1) == len(self.__pieces):
                             # No more pieces, then we have a solution
                             # Save the tree path as a solution
                             self.__solutions_nodes.append(self.__tree_path
-                                                          .copy())
+                                                          .copy())                       
+                            # Stop if we look at the first solution only
+                            first_found = True
+                            if self.__first:
+                                break
                             # Remove the last position added
                             self.__tree_path.pop()
                             # and go backward on the path, if we can
@@ -178,6 +193,9 @@ class Puzzle(object):
                             # Restore the board
                             self.__board = numpy.copy(backup_board)
                             test_position_idx += 1
+            # Stop if we look at the first solution only
+            if self.__first and first_found:
+                break
         stop = time.time()
         if self.__verbose:
             print()
