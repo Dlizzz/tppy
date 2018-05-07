@@ -23,6 +23,8 @@ class Puzzle(object):
         # Protected members
         # Do we have to be verbose
         self.__verbose = args.verbose
+        # Do we stop at first solution found
+        self.__first = args.first
         # Images output
         self.__images = args.images      
         self.__cell_size = args.cell_size
@@ -116,58 +118,66 @@ class Puzzle(object):
             self.__tree_path = [(0, position_idx)]
             # Init the board with root position
             self.__board = numpy.copy(self.__pieces[0].positions[position_idx])
-            # Go through the tree, starting at first position of next piece
-            test_piece_idx = 1
-            test_position_idx = 0
-            while True:
-                # backup board and add next position to board and test it
-                backup_board = numpy.copy(self.__board)
-                self.__board += (self.__pieces[test_piece_idx]
-                                 .positions[test_position_idx])
-                if numpy.max(self.__board) <= 1:
-                    # We have a valid combination, save the node in tree path
-                    self.__tree_path.append((test_piece_idx, 
-                                             test_position_idx))
-                    if self.__verbose:
-                        print("{}".format(" "*80), end="\r", flush=True)
-                        print(self.__tree_path, end="\r", flush=True)
-                    # Can we move to next piece ?
-                    if (test_piece_idx + 1) == len(self.__pieces):
-                        # No more pieces, then we have a solution
-                        # Save the tree path as a solution
-                        self.__solutions_nodes.append(self.__tree_path.copy())
-                        # Remove the last position added
-                        self.__tree_path.pop()
-                        # and go backward on the path, if we can
-                        node = self.__tree_path_backward()
-                        if not node[0]:
-                            # No more node in the path, end of the tree
-                            break
+            if len(self.__pieces) == 1:
+                # We have only one piece, all positions are solutions
+                # Save the tree path as a solution
+                self.__solutions_nodes.append(self.__tree_path.copy())
+            else:
+                # Go through the tree, starting at first position 
+                # of next piece
+                test_piece_idx = 1
+                test_position_idx = 0
+                while True:
+                    # backup board and add next position to board and test it
+                    backup_board = numpy.copy(self.__board)
+                    self.__board += (self.__pieces[test_piece_idx]
+                                    .positions[test_position_idx])
+                    if numpy.max(self.__board) <= 1:
+                        # We have a valid combination, save the node in 
+                        # tree path
+                        self.__tree_path.append((test_piece_idx, 
+                                                test_position_idx))
+                        if self.__verbose:
+                            print("{}".format(" "*80), end="\r", flush=True)
+                            print(self.__tree_path, end="\r", flush=True)
+                        # Can we move to next piece ?
+                        if (test_piece_idx + 1) == len(self.__pieces):
+                            # No more pieces, then we have a solution
+                            # Save the tree path as a solution
+                            self.__solutions_nodes.append(self.__tree_path
+                                                          .copy())
+                            # Remove the last position added
+                            self.__tree_path.pop()
+                            # and go backward on the path, if we can
+                            node = self.__tree_path_backward()
+                            if not node[0]:
+                                # No more node in the path, end of the tree
+                                break
+                            else:
+                                test_piece_idx = node[1]
+                                test_position_idx = node[2]                        
                         else:
-                            test_piece_idx = node[1]
-                            test_position_idx = node[2]                        
+                            # Move to next piece, first position
+                            test_piece_idx += 1
+                            test_position_idx = 0 
                     else:
-                        # Move to next piece, first position
-                        test_piece_idx += 1
-                        test_position_idx = 0 
-                else:
-                    # Not a valid combination, move to next position, 
-                    # if it exists
-                    if ((test_position_idx + 1) 
-                        == len(self.__pieces[test_piece_idx].positions)):
-                        # No more position for the piece
-                        # Go backward on the path, if we can
-                        node = self.__tree_path_backward()
-                        if not node[0]:
-                            # No more node in the path, end of the tree
-                            break
+                        # Not a valid combination, move to next position, 
+                        # if it exists
+                        if ((test_position_idx + 1) 
+                            == len(self.__pieces[test_piece_idx].positions)):
+                            # No more position for the piece
+                            # Go backward on the path, if we can
+                            node = self.__tree_path_backward()
+                            if not node[0]:
+                                # No more node in the path, end of the tree
+                                break
+                            else:
+                                test_piece_idx = node[1]
+                                test_position_idx = node[2]                        
                         else:
-                            test_piece_idx = node[1]
-                            test_position_idx = node[2]                        
-                    else:
-                        # Restore the board
-                        self.__board = numpy.copy(backup_board)
-                        test_position_idx += 1
+                            # Restore the board
+                            self.__board = numpy.copy(backup_board)
+                            test_position_idx += 1
         stop = time.time()
         if self.__verbose:
             print()

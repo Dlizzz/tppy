@@ -70,6 +70,9 @@ def get_parameters():
     parser.add_argument("--verbose", 
         action="store_true", 
         help="Print progress status on stdout")
+    parser.add_argument("--first", 
+        action="store_true", 
+        help="Stop at first solution found")
     group_board.add_argument("--rows",
         help="Number of board rows",
         type=int,
