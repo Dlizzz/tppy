@@ -73,7 +73,7 @@ class Puzzle(object):
             self.__tree_path.pop()
             if self.__tree_path == []:
                 # No more node, can't go backward
-                backward_status = False
+                backward_ok = False
                 break
             # If we have a next position
             if position_idx < len(self.__pieces[piece_idx].positions):
@@ -83,10 +83,10 @@ class Puzzle(object):
                                            numpy.uint8)
                 for node in self.__tree_path:
                     self.__board += self.__pieces[node[0]].positions[node[1]]
-                backward_status = True
+                backward_ok = True
                 break
             # Else continue backward in tree path 
-        return (backward_status, piece_idx, position_idx)
+        return (backward_ok, piece_idx, position_idx)
 
     def __print_tree_path(self):
         """Method (protected): format and print the tree path"""
@@ -125,9 +125,10 @@ class Puzzle(object):
             print("Info: testing {:,d} combinations of positions in total !"
                   .format(self.__combinations_count).replace(",", " "))
         start = time.time()
-        # Sort the pieces stack from smallest number of positions to the 
-        # biggest, to optimize tree path
-        self.__pieces.sort(key=lambda piece: len(piece.positions))
+        # Sort the pieces stack from biggest number of positions to the 
+        # smallest, to optimize tree path
+        self.__pieces.sort(key=lambda piece: len(piece.positions), 
+                           reverse=True)
         # Each position of the first piece is a tree root
         for position_idx in range(len(self.__pieces[0].positions)):          
             # Root node of the tree
