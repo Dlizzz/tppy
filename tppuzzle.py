@@ -5,36 +5,28 @@
     Description:
         talos-puzzle puzzle definition
 """
-import os
 import sys
 import numpy
 import time
 import copy
-import tppieces
-import tpimages
-from PIL import ImageColor
+from tppieces import Piece
+from tpimages import Images, ImagesError
 from collections import namedtuple
 
 # Class definition
 class Puzzle(object):
     """Class: game board and stack of solutions"""
     def __init__(self, args):
-        """Constructor: create board with rows x columns dimension"""
+        """Constructor: init the puzzle with rows x columns dimension"""
         # Protected members
         # Do we have to be verbose
         self.__verbose = args.verbose
         # Do we stop at first solution found
         self.__first = args.first
         # Images output
-        self.__images = args.images      
-        self.__cell_size = args.cell_size
-        self.__fill_color = ImageColor.getrgb(args.fill_color)
-        self.__shape_color = ImageColor.getrgb(args.shape_color)
-        self.__output_dir = (args.output_dir + "\\Board {}R x {}C - {}LR {}LL "
-                             "{}TE {}BA {}SQ {}SR {}SL".format(args.rows, 
-                             args.columns, args.l_right, args.l_left, args.tee,
-                             args.bar, args.square, args.step_right, 
-                             args.step_left))
+        self.__images = None
+        if args.images:
+            self.__images = Images(args)
         # Game board dimensions and board
         self.__board_rows = args.rows
         self.__board_columns = args.columns
@@ -51,15 +43,6 @@ class Puzzle(object):
         self.__solutions_pieces = []
         # Total combinations count
         self.__combinations_count = 1
-        if self.__verbose:
-            print("Info: Create puzzle with {} rows and {} columns."
-                  .format(self.__board_rows, self.__board_columns))
-            print("Info: Board size is {}.".format(self.__board_rows
-                                                   * self.__board_columns))
-            if self.__images:
-                print("Info: Solutions image will be generated in {} "
-                      "with a cell size of {}."
-                      .format(self.__output_dir, self.__cell_size))
   
     def __tree_path_backward(self):
         """Method (protected): go backward on the tree path, until we find 
@@ -122,7 +105,10 @@ class Puzzle(object):
            valid combination for a piece, test it with the next piece 
            positions."""
         if self.__verbose:
-            print("Info: testing {:,d} combinations of positions in total !"
+            print("Info: Solve puzzle with {} rows and {} columns. Board size "
+                  "is {}".format(self.__board_rows, self.__board_columns,
+                  self.__board_rows * self.__board_columns))
+            print("Info: Testing {:,d} combinations of positions in total !"
                   .format(self.__combinations_count).replace(",", " "))
         start = time.time()
         # Sort the pieces stack from biggest number of positions to the 
@@ -238,24 +224,16 @@ class Puzzle(object):
             print("No solution found for the puzzle !")
             exit(0)
         # Output images if needed
-        if self.__images:
-            # Create directory to store the images
-            try:
-                os.makedirs(self.__output_dir,exist_ok=True)
-            except IOError:
-                print("Fatal: Can't create output directory {}"
-                      .format(self.__output_dir)) 
-                exit(1)
+        if not self.__images is None:
+            if self.__verbose:
+                print("Info: Solutions image will be generated in {} "
+                      "with a cell size of {}."
+                      .format(self.__images.output_dir, 
+                              self.__images.cell_size))
             for solution_idx, solution in enumerate(self.__solutions_pieces, 
-                                                    1):
-                # Draw the solution
-                image = tpimages.draw_board(solution, self.__cell_size, 
-                                            self.__fill_color, 
-                                            self.__shape_color)
-                # Save the image
-                image_name = (self.__output_dir 
-                              + "\\Solution #{:0>2}.png".format(solution_idx))
+                                                   1):
                 try:
-                    image.save(image_name)
-                except:
-                    print("Fatal: Can't save image {}".format(image_name)) 
+                    self.__images.output_solution(solution_idx, solution)
+                except ImagesError as err:
+                    print(err.message)
+                    exit(1)
