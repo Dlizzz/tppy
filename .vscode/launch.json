@@ -95,7 +95,7 @@
             "envFile": "${workspaceFolder}/.env",
             "debugOptions": [
                 "RedirectOutput",
-                "DjangoDebugging"
+                "Django"
             ]
         },
         {

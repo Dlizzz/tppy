@@ -166,12 +166,12 @@ def check_parameters(args):
         print("Info: Cell size must be > 0 ! Using default size.")
         args.cell_size = 100
     try:
-        color = ImageColor.getrgb(args.shape_color)
+        ImageColor.getrgb(args.shape_color)
     except:
         print("Info: Wrong color name for shape! Using default color.")
         args.shape_color = "Yellow"
     try:
-        color = ImageColor.getrgb(args.fill_color)
+        ImageColor.getrgb(args.fill_color)
     except:
         print("Info: Wrong color name for fill! Using default color.")
         args.fill_color = "DarkMagenta"
