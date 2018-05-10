@@ -5,16 +5,16 @@
     Description:
         talos-puzzle puzzle definition
 """
+import os
 import numpy
 import time
 import copy
+from PIL import ImageColor
 from tppieces import Piece
-from tpimages import Images, ImagesError
+from tpsolutions import Solution
 from tppositions import combine_positions
 
 # Class definition
-
-
 class Puzzle(object):
     """Class: game board and stack of solutions"""
 
@@ -27,19 +27,21 @@ class Puzzle(object):
         self.__first = args.first
         # Images output
         self.__images = None
-        if args.images:
-            self.__images = Images(args)
+        self.__cell_size = args.cell_size
+        self.__fill_color = ImageColor.getrgb(args.fill_color)
+        self.__shape_color = ImageColor.getrgb(args.shape_color)
+        self.__output_dir = (args.output_dir 
+                             + "\\Board {}Rx{}C - {}LR {}LL {}SR {}SL {}TE "
+                             "{}BA {}SQ".format(args.rows, args.columns, 
+                             args.l_right, args.l_left, args.step_right, 
+                             args.step_left, args.tee, args.bar, args.square))
         # Game board dimensions
         self.__board_rows = args.rows
         self.__board_columns = args.columns
         # Stack of pieces with positions
         self.__pieces = []
-        # Solution nodes, stack of stack of valid tree path
-        self.__solutions_paths = []
-        # Solutions with label to remove duplicates
-        self.__solutions_label = []
-        # Solutions with pieces index to draw solution
-        self.__solutions_pieces = []
+        # Stack of solutions
+        self.__solutions = []
         # Total combinations count
         self.__combinations_count = 1
 
@@ -89,7 +91,9 @@ class Puzzle(object):
         if max_depth < 0 and self.__combinations_count > 0:
             # We have only one piece (a square or a bar) with one position
             # Then we have all the solutions
-            self.__solutions_paths.append((0, 0))
+            board = numpy.zeros((self.__board_rows, self.__board_columns))
+            tree_path = [(0, 0)]
+            self.__solutions.append(Solution(self.__pieces, board, tree_path)) 
         else:
             # Sort the pieces stack from biggest number of positions to the
             # smallest, to optimize tree path
@@ -102,57 +106,46 @@ class Puzzle(object):
                 # Init the board with root position
                 board = numpy.copy(self.__pieces[0].positions[position_idx])
                 # Recursively goes trough positions combination
-                combine_positions(self.__pieces, self.__solutions_paths,
-                                  tree_path, board, max_depth)
+                combine_positions(self.__pieces, self.__solutions, tree_path, 
+                                  board, max_depth)
         stop = time.time()
         if self.__verbose:
             print("Info: Time spent in solving puzzle: {:,.2f} secondes"
                   .format(stop - start).replace(",", " "))
 
-    def solutions(self):
+    def output_solutions(self):
         """Method: output the solutions if we have some"""
-        # Output solutions
-        for solution in self.__solutions_paths:
-            solution_label = [[""
-                               for col in range(self.__board_columns)]
-                              for row in range(self.__board_rows)]
-            solution_pieces = [[0
-                                for col in range(self.__board_columns)]
-                               for row in range(self.__board_rows)]
-            for node in solution:
-                if isinstance(node, tuple):
-                    piece_idx = node[0]
-                    position_idx = node[1]
-                else:
-                    # If we have only one solution, solution is a tuple and not
-                    # a list of tuple 
-                    piece_idx = solution[0]
-                    position_idx = solution[1]                    
-                position = (self.__pieces[piece_idx].positions[position_idx])
-                for row in range(self.__board_rows):
-                    for column in range(self.__board_columns):
-                        if position[row][column] == 1:
-                            solution_label[row][column] = (self.__pieces[
-                                                           piece_idx].label)
-                            solution_pieces[row][column] = piece_idx
-            if solution_label not in self.__solutions_label:
-                # Add solution if not already existing
-                self.__solutions_label.append(solution_label)
-                self.__solutions_pieces.append(solution_pieces)
-                print("Solution:\n--------", *solution_label, sep="\n ")
+        # Remove duplicate solutions
+        # TODO: Remove duplicate solutions
         # Report solutions
-        if len(self.__solutions_label) != 0:
+        if len(self.__solutions) != 0:
             print("Puzzle solved ! Found {} unique solutions"
-                  .format(len(self.__solutions_label)))
+                  .format(len(self.__solutions)))
+            for solution in self.__solutions:
+                solution.print_solution()
         else:
             print("No solution found for the puzzle !")
             exit(0)
         # Output images if needed
         if self.__images:
-            for solution_idx, solution in enumerate(self.__solutions_pieces,
-                                                    1):
+            # Create directory to store the images
+            try:
+                os.makedirs(self.__output_dir,exist_ok=True)
+            except Exception as err:
+                print("Fatal: Can\'t create output directory {}."
+                      " System message is: "
+                      .format(self.__output_dir), err)
+                exit(1)
+            # Draw and save all images
+            for solution_idx, solution in enumerate(self.__solutions, 1):
+                image = solution.draw_solution(self.__cell_size, 
+                                               self.__fill_color, 
+                                               self.__shape_color)
+                image_name = (self.__output_dir + "\\Solution #{:0>2}.png"
+                              .format(solution_idx))
                 try:
-                    self.__images.output_solution(solution_idx, solution)
-                except ImagesError as err:
-                    print(err.message)
+                    image.save(image_name)
+                except Exception as err:
+                    print("Fatal: Can't save image {}. System message is: "
+                          .format(image_name), err)
                     exit(1)

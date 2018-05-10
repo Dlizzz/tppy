@@ -39,9 +39,6 @@ def main():
     # Get puzzle parameters from command line
     args = tpparam.get_parameters()
 
-    # Check that configuration is valid. Exits if not.
-    tpparam.check_parameters(args)
-
     # Create board
     puzzle = tppuzzle.Puzzle(args)
 
@@ -64,8 +61,8 @@ def main():
     # Solve the puzzle
     puzzle.solve()
 
-    # Print the solutions
-    puzzle.solutions()
+    # Print the solutions and save the images if needed
+    puzzle.output_solutions()
      
 # Main
 if __name__ == "__main__":

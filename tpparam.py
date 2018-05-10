@@ -59,6 +59,7 @@ class writeable_dir(argparse.Action):
 # Functions
 def get_parameters():
     """ Parse command line arguments """
+    # Create parser and define parameters
     parser = argparse.ArgumentParser(description=DESCRIPTION_TEXT,
                                      epilog=EPILOG_TEXT,
                                      formatter_class=argparse.
@@ -126,9 +127,11 @@ def get_parameters():
     group_solutions.add_argument("--fill-color",
         default="DarkMagenta",
         help="Color name (HTML) of the fill color")
-    return parser.parse_args()
 
-def check_parameters(args):
+    # Get parameters
+    args = parser.parse_args()
+
+    # Check_parameters
     if args.rows < 1:
         print("Fatal: Rows number must be > 0 !")
         exit(1)
@@ -175,6 +178,8 @@ def check_parameters(args):
     except:
         print("Info: Wrong color name for fill! Using default color.")
         args.fill_color = "DarkMagenta"
+
+    return args
 
 
     
