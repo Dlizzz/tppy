@@ -30,6 +30,7 @@ class Piece(object):
 
     def generate_positions(self, board_rows, board_columns):
         """Methods: generate piece positions for the given board."""
+        positions_count = 0
         # Loop over all patterns
         for pattern in self.__patterns:
             # Loop over the board cells
@@ -47,6 +48,8 @@ class Piece(object):
                           column:column + pattern_columns] += pattern
                     # Add it to the position stack 
                     self.positions.append(board)
+                    positions_count +=1
+        return positions_count
 
 # Pieces definition
 pieces_set = {
