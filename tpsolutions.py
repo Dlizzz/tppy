@@ -5,6 +5,7 @@
     Description:
         talos-puzzle solution definition
 """
+import copy
 from PIL import Image, ImageDraw
 from tperrors import ImageError
 

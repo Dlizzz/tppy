@@ -8,9 +8,9 @@
 import os
 import numpy
 import time
-import copy
 from PIL import ImageColor
 from tpsolutions import SolutionsCollection
+from tppieces import PiecesCollection
 from tperrors import ImageError
 from tppositions import combine_positions
 
@@ -36,7 +36,7 @@ class Puzzle(object):
                              args.l_right, args.l_left, args.step_right, 
                              args.step_left, args.tee, args.bar, args.square))
         # Stack of pieces with positions
-        self.__pieces = []
+        self.__pieces = PiecesCollection()
         # Collection of solutions
         self.__solutions = SolutionsCollection()
         # Properties (read only)
@@ -79,11 +79,8 @@ class Puzzle(object):
            to the puzzle piece stack
         """
         # Add to piece stack
-        self.__pieces.append(copy.deepcopy(piece))
-        # Generate positions for the piece
-        positions_count = (self.__pieces[-1]
-                           .generate_positions(self._board_rows,
-                                               self._board_columns))
+        positions_count = self.__pieces.add(piece, self._board_rows, 
+            self._board_columns)
         # Update the total count of combinations
         self._combinations_count *= positions_count
 
@@ -99,7 +96,7 @@ class Puzzle(object):
             self.__print_config()
         start = time.time()
         # Maximum depth to reach in the tree (one level before the last one)
-        max_depth = len(self.__pieces) - 2
+        max_depth = self.__pieces.count - 2
         if max_depth < 0 and self._combinations_count > 0:
             # We have only one piece (a square or a bar) with one position
             # Then we have all the solutions
