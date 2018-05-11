@@ -5,7 +5,6 @@
     Description:
         talos-puzzle solution definition
 """
-import copy
 from PIL import Image, ImageDraw
 from tperrors import ImageError
 
@@ -27,8 +26,12 @@ class SolutionsCollection(object):
         """Method: add a solution to the solutions stack, if not already
            exsiting. If solution alerady exists, do nothing.
         """
-        proposed_solution = Solution(pieces, board_rows, board_columns,
-                                     tree_path)
+        proposed_solution = Solution(
+            pieces,
+            board_rows,
+            board_columns,
+            tree_path
+        )
         # Check if solutioin already existing, and drops it if yes
         exists = False
         for solution in self.__stack:
@@ -75,10 +78,14 @@ class Solution(object):
         self.__board_rows = board_rows
         self.__board_columns = board_columns
         self.__solution_path = tree_path.copy()
-        self.__solution_label = [["" for col in range(self.__board_columns)]
-                                 for row in range(self.__board_rows)]
-        self.__solution_pieces = [[0 for col in range(self.__board_columns)]
-                                  for row in range(self.__board_rows)]
+        self.__solution_label = [
+            ["" for col in range(self.__board_columns)]
+            for row in range(self.__board_rows)
+        ]
+        self.__solution_pieces = [
+            [0 for col in range(self.__board_columns)]
+            for row in range(self.__board_rows)
+        ]
         for node in self.__solution_path:
             # If we have only one solution, solution is a tuple and not
             # a list of tuple
@@ -88,12 +95,13 @@ class Solution(object):
             else:
                 piece_idx = self.__solution_path[0]
                 position_idx = self.__solution_path[1]
-            position = (pieces[piece_idx].positions[position_idx])
+            position = (pieces.stack[piece_idx].positions[position_idx])
             for row in range(self.__board_rows):
                 for column in range(self.__board_columns):
                     if position[row][column] == 1:
-                        self.__solution_label[row][column] = (pieces[
-                            piece_idx].label)
+                        self.__solution_label[row][column] = (
+                            pieces.stack[piece_idx].label
+                        )
                         self.__solution_pieces[row][column] = piece_idx
 
     @property
@@ -113,9 +121,13 @@ class Solution(object):
     def draw(self, cell_size, fill_color, shape_color):
         """Method: draw the solution with the given parameter"""
         # Create image with a drawing context
-        self.__image = Image.new("RGB", (self.__board_columns * cell_size,
-                                         self.__board_rows * cell_size), 
-                                         fill_color)
+        self.__image = Image.new(
+            "RGB", (
+                self.__board_columns * cell_size,
+                self.__board_rows * cell_size
+            ),
+            fill_color
+        )
         draw = ImageDraw.Draw(self.__image)
         # Draw outside borders of pieces (use draw.line to have line
         # width)

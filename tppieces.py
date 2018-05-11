@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-    Name: tppiece.py       
+    Name: tppiece.py
     Description:
         talos-puzzle pieces definition
 """
 
 import copy
 import numpy
+
 
 class PiecesCollection(object):
     """Class: define a collection of pieces"""
@@ -20,11 +21,24 @@ class PiecesCollection(object):
     def count(self):
         return len(self.__stack)
 
+    @property
+    def stack(self):
+        return self.__stack
+
     def add(self, piece, board_rows, board_columns):
         """Method: add a piece to the stack"""
         self.__stack.append(copy.deepcopy(piece))
         # Generate positions for the piece
         return self.__stack[-1].generate_positions(board_rows, board_columns)
+
+    def sort(self):
+        """Method: sort the stack of pieces, from biggest number of positions
+           to smallest
+        """
+        self.__stack.sort(
+            key=lambda piece: len(piece.positions),
+            reverse=True
+        )
 
 
 class Piece(object):
@@ -36,8 +50,16 @@ class Piece(object):
         # Stack of piece patterns
         self.__patterns = [numpy.array(pattern, numpy.uint8)]
         for x in range(1, rotations_count):
-            self.__patterns.append(numpy.rot90(numpy.array(pattern,
-                                                           numpy.uint8), x, axes=(1, 0)))
+            self.__patterns.append(
+                numpy.rot90(
+                    numpy.array(
+                        pattern,
+                        numpy.uint8
+                    ),
+                    x,
+                    axes=(1, 0)
+                )
+            )
         # Public members
         # Piece name
         self.name = name
