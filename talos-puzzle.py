@@ -62,7 +62,7 @@ def main():
     puzzle.solve()
 
     # Print the solutions and save the images if needed
-    puzzle.output_solutions()
+    puzzle.solutions()
      
 # Main
 if __name__ == "__main__":

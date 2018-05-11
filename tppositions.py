@@ -7,7 +7,6 @@
 """
 
 import numpy
-from tpsolutions import Solution
 
 # Function
 def combine_positions(pieces, solutions, tree_path, board, max_depth):
@@ -30,8 +29,9 @@ def combine_positions(pieces, solutions, tree_path, board, max_depth):
             tree_path.append(next_node)
             if current_node[0] == max_depth:
                 # We have reach the end of the tree branch, then we have a
-                # solution. Copy tree path to solutions stack
-                solutions.append(Solution(pieces, board, tree_path))
+                # solution. Add the solution to the solutions collection
+                solutions.add(pieces, board.shape[0], board.shape[1],
+                              tree_path)
             else:
                 # Move to the next piece
                 combine_positions(pieces, solutions, tree_path, board, 
