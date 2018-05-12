@@ -22,6 +22,10 @@ class SolutionsCollection(object):
         """Method: override len() method for the collection"""
         return len(self.__stack)
 
+    def __getitem__(self, index):
+        """Method: ovverride '[]' (indexer) operator for the collection"""
+        return self.__stack[index]
+
     def __contains__(self, other):
         """Method: override 'in' operator for the collection"""
         is_in = False
@@ -31,12 +35,12 @@ class SolutionsCollection(object):
                 break
         return is_in
 
-    def add(self, pieces, board_rows, board_columns, tree_path):
-        """Method: add a solution to the solutions stack, if not already
-           exsiting. If solution alerady exists, do nothing.
+    def add(self, positions, board_rows, board_columns, tree_path):
+        """Method: create and add a solution to the solutions stack, if not
+           already exsiting. If solution alerady exists, do nothing.
         """
         solution = Solution(
-            pieces,
+            positions,
             board_rows,
             board_columns,
             tree_path
@@ -49,11 +53,7 @@ class SolutionsCollection(object):
     def echo(self):
         """Method: print the solutiions on stdout"""
         for solution_idx, solution in enumerate(self.__stack, 1):
-            print(
-                "Solution {}:".format(solution_idx),
-                *solution.label,
-                sep="\n "
-            )
+            print("Solution {}:".format(solution_idx), solution, sep="\n")
 
     def draw(self, cell_size, fill_color, shape_color):
         """Method: draw all solutions as PNG images"""
@@ -80,7 +80,7 @@ class SolutionsCollection(object):
 class Solution(object):
     """Class: solution definition"""
 
-    def __init__(self, pieces, board_rows, board_columns, tree_path):
+    def __init__(self, positions, board_rows, board_columns, tree_path):
         """Constructor: initialize the solution"""
         self.__image = None
         self.__board_rows = board_rows
@@ -95,39 +95,58 @@ class Solution(object):
             for row in range(self.__board_rows)
         ]
         for node in self.__solution_path:
-            # If we have only one solution, solution is a tuple and not
+            # If we have only one solution, solution_path is a tuple and not
             # a list of tuple
-            if isinstance(node, tuple):
-                piece_idx = node[0]
-                position_idx = node[1]
-            else:
+            if isinstance(self.__solution_path, tuple):
                 piece_idx = self.__solution_path[0]
                 position_idx = self.__solution_path[1]
-            position = (pieces.stack[piece_idx].positions[position_idx])
+            else:
+                piece_idx = node[0]
+                position_idx = node[1]
+            position = (positions[piece_idx][position_idx])
             for row in range(self.__board_rows):
                 for column in range(self.__board_columns):
                     if position[row][column] == 1:
                         self.__solution_label[row][column] = (
-                            pieces.stack[piece_idx].label
+                            positions[piece_idx].piece.label
                         )
                         self.__solution_pieces[row][column] = piece_idx
 
-    @property
-    def image(self):
-        return self.__image
-
-    @property
-    def label(self):
-        return self.__solution_label
+    def __str__(self):
+        """Method: ovveride to string method for the object"""
+        solution_str = ""
+        for row in range(self.__board_rows):
+            solution_str += "|" + " ".join(self.__solution_label[row]) + "|\n"
+        return solution_str
 
     def __eq__(self, other):
         """Method: ovveride equality. Solutions are equal if solution_lable are
            equal.
         """
-        return other.label == self.__solution_label
+        return other.pieces_label == self.__solution_label
+
+    @property
+    def image(self):
+        """Property: png image (PIL image) of the solution."""
+        return self.__image
+
+    @property
+    def path(self):
+        """Property: solution path."""
+        return self.__solution_path
+
+    @property
+    def pieces_label(self):
+        """Property: solution with the pieces labels."""
+        return self.__solution_label
+
+    @property
+    def pieces_number(self):
+        """Property: solution with the pieces number"""
+        return self.__solution_pieces
 
     def draw(self, cell_size, fill_color, shape_color):
-        """Method: draw the solution with the given parameter"""
+        """Method: draw the solution with the given parameter."""
         # Create image with a drawing context
         self.__image = Image.new(
             "RGB", (

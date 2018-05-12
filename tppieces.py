@@ -6,7 +6,6 @@
         talos-puzzle pieces definition
 """
 
-import copy
 import numpy
 
 
@@ -21,24 +20,13 @@ class PiecesCollection(object):
         """Method: ovverride 'len()' method for the collection"""
         return len(self.__stack)
 
-    @property
-    def stack(self):
-        return self.__stack
+    def __getitem__(self, index):
+        """Method: ovverride '[]' (indexer) operator for the collection"""
+        return self.__stack[index]
 
-    def add(self, piece, board_rows, board_columns):
-        """Method: add a piece to the stack"""
-        self.__stack.append(copy.deepcopy(piece))
-        # Generate positions for the piece
-        return self.__stack[-1].generate_positions(board_rows, board_columns)
-
-    def sort(self):
-        """Method: sort the stack of pieces, from biggest number of positions
-           to smallest
-        """
-        self.__stack.sort(
-            key=lambda piece: len(piece.positions),
-            reverse=True
-        )
+    def append(self, piece):
+        """Method: add a piece to the collection"""
+        self.__stack.append(piece)
 
 
 class Piece(object):
@@ -60,36 +48,22 @@ class Piece(object):
                     axes=(1, 0)
                 )
             )
-        # Public members
         # Piece name
-        self.name = name
+        self.__name = name
         # Piece label
-        self.label = label
-        # When added to a puzzle, a piece has positions
-        self.positions = []
+        self.__label = label
 
-    def generate_positions(self, board_rows, board_columns):
-        """Methods: generate piece positions for the given board."""
-        positions_count = 0
-        # Loop over all patterns
-        for pattern in self.__patterns:
-            # Loop over the board cells
-            pattern_rows = pattern.shape[0]
-            pattern_columns = pattern.shape[1]
-            rows_range = board_rows - pattern_rows + 1
-            columns_range = board_columns - pattern_columns + 1
-            for column in range(columns_range):
-                for row in range(rows_range):
-                    # Create new position
-                    board = numpy.zeros((board_rows, board_columns),
-                                        numpy.uint8)
-                    # Copy the pattern in the newly created position
-                    board[row:row + pattern_rows,
-                          column:column + pattern_columns] += pattern
-                    # Add it to the position stack
-                    self.positions.append(board)
-                    positions_count += 1
-        return positions_count
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def label(self):
+        return self.__label
+
+    @property
+    def patterns(self):
+        return self.__patterns
 
 
 # Pieces definition

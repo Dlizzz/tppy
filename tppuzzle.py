@@ -12,7 +12,7 @@ from PIL import ImageColor
 from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
 from tperrors import ImageError
-from tppositions import combine_positions
+from tppositions import PositionsStackCollection, combine_positions
 
 
 class Puzzle(object):
@@ -45,61 +45,58 @@ class Puzzle(object):
                 args.square
             )
         )
-        # Stack of pieces with positions
+        # Collection of pieces
         self.__pieces = PiecesCollection()
+        # Collection of positions per pieces
+        self.__positions = PositionsStackCollection()
         # Collection of solutions
         self.__solutions = SolutionsCollection()
         # Properties (read only)
         # Game board dimensions
-        self._board_rows = args.rows
-        self._board_columns = args.columns
-        # Total combinations count
-        self._combinations_count = 1
+        self.__board_rows = args.rows
+        self.__board_columns = args.columns
 
     @property
     def board_rows(self):
-        return self._board_rows
+        return self.__board_rows
 
     @property
     def board_columns(self):
-        return self._board_columns
-
-    @property
-    def combinations_count(self):
-        return self._combinations_count
+        return self.__board_columns
 
     def __print_config(self):
         """Method: print puzzle configuration"""
         print(
             "Info: Puzzle board is {} rows x {} columns (size = {})"
             .format(
-                self._board_rows,
-                self._board_columns,
-                self._board_rows * self._board_columns
+                self.__board_rows,
+                self.__board_columns,
+                self.__board_rows * self.__board_columns
             )
         )
         print("Info: Solving puzzle with the following pieces set:")
-        for piece in self.__pieces.stack:
-            print("\t {} with {} positions"
-                  .format(piece.name, len(piece.positions)))
-        print("Info: Testing {:,d} combinations of positions"
-              .format(self._combinations_count).replace(",", " "))
+        for piece_idx, piece in enumerate(self.__pieces):
+            print(
+                "\t{: >10} with {:0>3} positions"
+                .format(piece.name, len(self.__positions[piece_idx]))
+            )
+        print(
+            "Info: Testing {:,d} combinations of positions"
+            .format(self.__positions.combinations_count)
+            .replace(",", " ")
+        )
         if self.__save_images:
-            print("Info: Solutions image will be generated in {} with a cell "
-                  "size of {}.".format(self.__output_dir, self.__cell_size))
+            print(
+                "Info: Solutions image will be generated in {} with a cell "
+                "size of {}."
+                .format(self.__output_dir, self.__cell_size)
+            )
 
     def add_piece(self, piece):
-        """Method: add a piece, with all its possible positions on the board,
-           to the puzzle piece stack
+        """Method: add a piece to the collection
         """
-        # Add to piece stack
-        positions_count = self.__pieces.add(
-            piece,
-            self._board_rows,
-            self._board_columns
-        )
-        # Update the total count of combinations
-        self._combinations_count *= positions_count
+        # Append to pieces collection
+        self.__pieces.append(piece)
 
     def solve(self):
         """Method (public):
@@ -108,36 +105,41 @@ class Puzzle(object):
            valid combination for a piece, test it with the next piece
            positions.
         """
+        # Generate positions tree
+        for piece in self.__pieces:
+            self.__positions.add(
+                piece,
+                self.__board_rows,
+                self.__board_columns
+            )
+        # Optimize the positions tree
+        self.__positions.optimize()
         # Print config if needed
         if self.__verbose:
             self.__print_config()
+        # Start crawling the tree
         start = time.time()
         # Maximum depth to reach in the tree (one level before the last one)
         max_depth = len(self.__pieces) - 2
-        if max_depth < 0 and self._combinations_count > 0:
-            # We have only one piece (a square or a bar) with one position
-            # Then we have all the solutions
+        if max_depth < 0 and self.__positions.combinations_count > 0:
+            # We have only one piece (a square or a bar) with one position and
+            # at least one. Then we have all the solution
             self.__solutions.add(
-                self.__pieces,
-                self._board_rows,
-                self._board_columns,
+                self.__positions,
+                self.__board_rows,
+                self.__board_columns,
                 [(0, 0)]
             )
         else:
-            # Sort the pieces stack from biggest number of positions to the
-            # smallest, to optimize tree path
-            self.__pieces.sort()
             # Each position of the first piece is a tree root
-            for position_idx in range(len(self.__pieces.stack[0].positions)):
+            for position_idx, position in enumerate(self.__positions[0]):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
                 # Init the board with root position
-                board = numpy.copy(
-                    self.__pieces.stack[0].positions[position_idx]
-                )
+                board = numpy.copy(position)
                 # Recursively goes trough positions combination
                 combine_positions(
-                    self.__pieces,
+                    self.__positions,
                     self.__solutions,
                     tree_path,
                     board,
