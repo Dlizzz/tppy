@@ -17,8 +17,8 @@ class PiecesCollection(object):
         """Constructor: initialize the pieces stack"""
         self.__stack = []
 
-    @property
-    def count(self):
+    def __len__(self):
+        """Method: ovverride 'len()' method for the collection"""
         return len(self.__stack)
 
     @property

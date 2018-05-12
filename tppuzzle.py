@@ -113,7 +113,7 @@ class Puzzle(object):
             self.__print_config()
         start = time.time()
         # Maximum depth to reach in the tree (one level before the last one)
-        max_depth = self.__pieces.count - 2
+        max_depth = len(self.__pieces) - 2
         if max_depth < 0 and self._combinations_count > 0:
             # We have only one piece (a square or a bar) with one position
             # Then we have all the solutions
@@ -151,9 +151,11 @@ class Puzzle(object):
     def solutions(self):
         """Method: output the solutions if we have some"""
         # Report solutions
-        if self.__solutions.count != 0:
-            print("Puzzle solved ! Found {} unique solutions"
-                  .format(self.__solutions.count))
+        if len(self.__solutions) != 0:
+            print(
+                "Puzzle solved ! Found {} unique solutions"
+                .format(len(self.__solutions))
+            )
             self.__solutions.echo()
         else:
             print("No solution found for the puzzle !")

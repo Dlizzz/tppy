@@ -18,34 +18,42 @@ class SolutionsCollection(object):
         """Constructor: initialize the solutions stack"""
         self.__stack = []
 
-    @property
-    def count(self):
+    def __len__(self):
+        """Method: override len() method for the collection"""
         return len(self.__stack)
+
+    def __contains__(self, other):
+        """Method: override 'in' operator for the collection"""
+        is_in = False
+        for solution in self.__stack:
+            if other == solution:
+                is_in = True
+                break
+        return is_in
 
     def add(self, pieces, board_rows, board_columns, tree_path):
         """Method: add a solution to the solutions stack, if not already
            exsiting. If solution alerady exists, do nothing.
         """
-        proposed_solution = Solution(
+        solution = Solution(
             pieces,
             board_rows,
             board_columns,
             tree_path
         )
         # Check if solutioin already existing, and drops it if yes
-        exists = False
-        for solution in self.__stack:
-            if proposed_solution.is_equal(solution):
-                exists = True
-                break
         # Not already in the stack, add it
-        if not exists:
-            self.__stack.append(proposed_solution)
+        if solution not in self.__stack:
+            self.__stack.append(solution)
 
     def echo(self):
         """Method: print the solutiions on stdout"""
-        for solution in self.__stack:
-            print("Solution:\n--------", *solution.label, sep="\n ")
+        for solution_idx, solution in enumerate(self.__stack, 1):
+            print(
+                "Solution {}:".format(solution_idx),
+                *solution.label,
+                sep="\n "
+            )
 
     def draw(self, cell_size, fill_color, shape_color):
         """Method: draw all solutions as PNG images"""
@@ -112,11 +120,11 @@ class Solution(object):
     def label(self):
         return self.__solution_label
 
-    def is_equal(self, solution):
-        """Method: return true if teh given solution is equal to the current
-           solution (same solution label)
+    def __eq__(self, other):
+        """Method: ovveride equality. Solutions are equal if solution_lable are
+           equal.
         """
-        return solution.label == self.__solution_label
+        return other.label == self.__solution_label
 
     def draw(self, cell_size, fill_color, shape_color):
         """Method: draw the solution with the given parameter"""

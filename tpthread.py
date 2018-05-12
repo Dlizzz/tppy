@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-    Name: tppuzzle.py
+    Name: tpthread.py
     Description:
-        talos-puzzle definition of positions and positions collection
+        Definition of the tree crawler thread. One thread per tree.
 """
 
 import numpy
