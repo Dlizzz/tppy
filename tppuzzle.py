@@ -9,10 +9,10 @@ import os
 import numpy
 import time
 from PIL import ImageColor
+from tperrors import ImageError
 from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
-from tperrors import ImageError
-from tppositions import PositionsStackCollection, combine_positions
+from tppositions import PositionsStackCollection
 
 
 class Puzzle(object):
@@ -138,8 +138,7 @@ class Puzzle(object):
                 # Init the board with root position
                 board = numpy.copy(position)
                 # Recursively goes trough positions combination
-                combine_positions(
-                    self.__positions,
+                self.__positions.crawl_tree(
                     self.__solutions,
                     tree_path,
                     board,
