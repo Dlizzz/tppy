@@ -9,6 +9,7 @@ import os
 import numpy
 import time
 from PIL import ImageColor
+from threading import Thread
 from tperrors import ImageError
 from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
@@ -123,7 +124,7 @@ class Puzzle(object):
         max_depth = len(self.__pieces) - 2
         if max_depth < 0 and self.__positions.combinations_count > 0:
             # We have only one piece (a square or a bar) with one position and
-            # at least one. Then we have all the solution
+            # at least one. Then we have all the solutions
             self.__solutions.add(
                 self.__positions,
                 self.__board_rows,
@@ -131,19 +132,40 @@ class Puzzle(object):
                 [(0, 0)]
             )
         else:
+            # If we need to stop after first solution found
+            if self.__first:
+                # Create a waiting thread on the solution collection, which
+                # will stop the crawlers after the first solution found
+                waiter = Thread(target=self.__solutions.solution_found)
+                waiter.start()
+            # Stack of crawler threads
+            crawler_threads = []
             # Each position of the first piece is a tree root
             for position_idx, position in enumerate(self.__positions[0]):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
                 # Init the board with root position
                 board = numpy.copy(position)
-                # Recursively goes trough positions combination
-                self.__positions.crawl_tree(
-                    self.__solutions,
-                    tree_path,
-                    board,
-                    max_depth
+                # Create the crawler_thread
+                crawler = Thread(
+                    target=self.__positions.crawl_tree,
+                    args=(
+                        self.__solutions,
+                        tree_path,
+                        board,
+                        max_depth
+                    )
                 )
+                crawler_threads.append(crawler)
+            # Start the crawler
+            for crawler in crawler_threads:
+                crawler.start()
+            if self.__first:
+                # Wait for the waiter to terminate
+                waiter.join()
+            # Wait for all threads to terminate
+            for crawler in crawler_threads:
+                crawler.join()
         stop = time.time()
         if self.__verbose:
             print("Info: Time spent in solving puzzle: {:,.2f} secondes"

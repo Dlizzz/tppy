@@ -6,9 +6,8 @@
         talos-puzzle solution definition
 """
 from PIL import Image, ImageDraw
+from threading import Condition, Event
 from tperrors import ImageError
-
-# Class definitions
 
 
 class SolutionsCollection(object):
@@ -16,7 +15,22 @@ class SolutionsCollection(object):
 
     def __init__(self):
         """Constructor: initialize the solutions stack"""
+        # Stack of Solution
         self.__stack = []
+        # Condition object (with underlyiong RLock)to implement a thread safe
+        # Solution addition to the collection, with notification waiting
+        # threads
+        self.__lock = Condition()
+        # Event to stop threads when a solution has been found
+        self.__found = Event()
+
+    @property
+    def lock(self):
+        return self.__lock
+
+    @property
+    def found(self):
+        return self.__found
 
     def __len__(self):
         """Method: override len() method for the collection"""
@@ -34,6 +48,17 @@ class SolutionsCollection(object):
                 is_in = True
                 break
         return is_in
+
+    def solution_found(self):
+        """Method: wait for the first solution to be found, then stops all
+           crawler threads by sending found event
+        """
+        with self.__lock:
+            while not self.__stack:
+                # Wait until notified (a solution has been found)
+                self.__lock.wait()
+            # Send found event to crawler threads to stop them
+            self.__found.set()
 
     def add(self, positions, board_rows, board_columns, tree_path):
         """Method: create and add a solution to the solutions stack, if not
