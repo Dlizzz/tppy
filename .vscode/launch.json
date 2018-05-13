@@ -14,26 +14,26 @@
             "program": "${workspaceFolder}/talos-puzzle.py",
             "args": [
                 "--verbose",
-                "--first",
+                //"--first",
                 "--images",
                 "--rows",
-                "8",
+                "5",
                 "--columns",
-                "6",
+                "4",
                 "--l-right",
                 "1",
                 "--l-left",
-                "1",
+                "0",
                 "--step-right",
-                "2",
+                "1",
                 "--step-left",
-                "2",
-                "--square",
-                "2",
+                "1",
                 "--tee",
-                "4",
+                "2",
                 "--bar",
-                "0"
+                "0",
+                "--square",
+                "0",
             ],
             "cwd": "${workspaceFolder}",
             "env": {},
@@ -95,7 +95,7 @@
             "envFile": "${workspaceFolder}/.env",
             "debugOptions": [
                 "RedirectOutput",
-                "DjangoDebugging"
+                "Django"
             ]
         },
         {
