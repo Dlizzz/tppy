@@ -113,7 +113,7 @@ class Puzzle(object):
                 self.__board_rows,
                 self.__board_columns
             )
-        # Optimize the positions tree
+        # Optimize positions tree
         self.__positions.optimize()
         # Print config if needed
         if self.__verbose:
@@ -134,10 +134,10 @@ class Puzzle(object):
         else:
             # If we need to stop after first solution found
             if self.__first:
-                # Create a waiting thread on the solution collection, which
+                # Create a signal thread on the solution collection, which
                 # will stop the crawlers after the first solution found
-                waiter = Thread(target=self.__solutions.solution_found)
-                waiter.start()
+                signaler = Thread(target=self.__solutions.solution_found)
+                signaler.start()
             # Stack of crawler threads
             crawler_threads = []
             # Each position of the first piece is a tree root
@@ -162,7 +162,7 @@ class Puzzle(object):
                 crawler.start()
             if self.__first:
                 # Wait for the waiter to terminate
-                waiter.join()
+                signaler.join()
             # Wait for all threads to terminate
             for crawler in crawler_threads:
                 crawler.join()

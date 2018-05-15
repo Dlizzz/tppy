@@ -7,7 +7,7 @@
 """
 
 import numpy
-from threading import local
+from threading import local, Lock
 
 
 class CrawlerLocalData(local):
@@ -19,6 +19,7 @@ class CrawlerLocalData(local):
         self.position_idx = None
         self.position = None
         self.backup_board = None
+        self.nodes_crawled = 0
 
     @property
     def next_node(self):
@@ -35,8 +36,10 @@ class PositionsStackCollection(object):
         self.__stack = []
         # Total combinations count
         self.__combinations_count = 1
-        # Positions count per stack
-        self.__positions_count = ()
+        # Nodes crawled counter
+        self.__nodes_crawled = 0
+        # Lock for the Nodes crawled counter
+        self.__lock = Lock()
 
     def __len__(self):
         """Method: provide 'len()' method for the collection"""
@@ -50,10 +53,6 @@ class PositionsStackCollection(object):
     def combinations_count(self):
         return self.__combinations_count
 
-    @property
-    def positions_count(self):
-        return self.__positions_count
-
     def add(self, piece, board_rows, board_columns):
         """Method: create and add a stack of positions to the collection, for
            the given piece and board
@@ -61,7 +60,6 @@ class PositionsStackCollection(object):
         positions_stack = PositionsStack(piece, board_rows, board_columns)
         self.__stack.append(positions_stack)
         self.__combinations_count *= len(positions_stack)
-        self.__positions_count += (len(positions_stack),)
 
     def optimize(self):
         """Method: sort the collection of positions stacks, from smallest
@@ -85,7 +83,8 @@ class PositionsStackCollection(object):
         for local_data.position_idx, local_data.position in enumerate(
             self.__stack[local_data.next_piece_idx]
         ):
-            # If main thread indicates that solution is found, break and exit
+            # If signaler thread indicates that solution is found,
+            # exit immediately
             if solutions.found.is_set():
                 break
             # Save current board
@@ -113,11 +112,21 @@ class PositionsStackCollection(object):
                         solutions.lock.notify_all()
                 else:
                     # Move to the next piece
-                    self.crawl_tree(solutions, tree_path, board, max_depth)
+                    self.__nodes_crawled += self.crawl_tree(
+                        solutions,
+                        tree_path,
+                        board,
+                        max_depth
+                    )
                 # Restore tree path to current node
                 tree_path.pop()
             # Restore board to previous state and move to next position
             board = numpy.copy(local_data.backup_board)
+        # Add number of nodes crawled to the gloabl counter (thread safe)
+        with self.__lock:
+            self.__nodes_crawled += len(
+                self.__stack[local_data.next_piece_idx]
+            )
 
 
 class PositionsStack(object):
