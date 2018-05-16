@@ -1,6 +1,6 @@
 ﻿# talos-puzzle
 
-This python 3 script solves the Sigil puzzles in Talos Principle game from Croteam: http://www.croteam.com/talosprinciple/
+This python 3 script solves the Sigil puzzles in Talos Principle game from Croteam: <http://www.croteam.com/talosprinciple/>
 
 Puzzle board is made of Rows x Columns cells.
 Column is the horizontal dimension.
@@ -23,6 +23,7 @@ Solutions (if they exist) are output on the console and can be saved as PNG imag
 
 - --verbose: Print progress status on stdout (toggle)
 - --first: Stop at first solution found (toggle)
+- --stats: Save puzzle solving statistics in CSV format (toggle)
 - --rows #: Number of board rows (mandatory)
 - --columns #: Number of board columns (mandatory)
 - --square #: Number of Square shape pieces (default: 0)

@@ -7,7 +7,7 @@
 """
 
 import numpy
-from threading import local, Lock
+from threading import local
 
 
 class CrawlerLocalData(local):
@@ -37,12 +37,6 @@ class PositionsStackCollection(object):
         self.__stack = []
         # Total combinations count
         self.__combinations_count = 1
-        # Positions count per pieces
-        self.__positions_count = ()
-        # Nodes crawled counter
-        self.__nodes_crawled = 1
-        # Lock for the Nodes crawled counter
-        self.__lock = Lock()
 
     def __len__(self):
         """Method: provide 'len()' method for the collection"""
@@ -63,7 +57,6 @@ class PositionsStackCollection(object):
         positions_stack = PositionsStack(piece, board_rows, board_columns)
         self.__stack.append(positions_stack)
         self.__combinations_count *= len(positions_stack)
-        self.__positions_count += (len(positions_stack),)
 
     def optimize(self):
         """Method: sort the collection of positions stacks, from smallest
@@ -74,9 +67,6 @@ class PositionsStackCollection(object):
         if self.__stack:
             self.__stack.sort(key=lambda stack: len(stack))
             self.__stack.insert(0, self.__stack.pop())
-            self.__positions_count = ()
-            for positions_stack in self.__stack:
-                self.__positions_count += (len(positions_stack),)
 
     def crawl_tree(self, solutions, tree_path, board, max_depth):
         """ Method: Recursive function to go through the positions
@@ -119,7 +109,7 @@ class PositionsStackCollection(object):
                         solutions.lock.notify_all()
                 else:
                     # Move to the next piece
-                    self.__nodes_crawled += self.crawl_tree(
+                    self.crawl_tree(
                         solutions,
                         tree_path,
                         board,
@@ -129,14 +119,6 @@ class PositionsStackCollection(object):
                 tree_path.pop()
             # Restore board to previous state and move to next position
             board = numpy.copy(local_data.backup_board)
-        # Add number of nodes crawled to the gloabl counter (thread safe)
-        for local_data.piece_idx in range(
-            local_data.next_piece_idx:len(self.__positions_count)
-        ):
-            local_data.nodes_crawled *= (
-                self.__positions_count[local_data.piece_idx]
-            )
-        with self.__lock:
 
 
 class PositionsStack(object):

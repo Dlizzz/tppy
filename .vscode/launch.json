@@ -15,6 +15,7 @@
             "args": [
                 "--verbose",
                 "--first",
+                "--stats",
                 "--images",
                 "--rows",
                 "4",
@@ -36,6 +37,22 @@
                 "0",
             ],
             "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "debugOptions": [
+                "RedirectOutput"
+            ]
+        },
+        {
+            "name": "Test",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "console": "externalTerminal",
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceFolder}/test/tptests.py",
+            "args": [],
+            "cwd": "${workspaceFolder}/test",
             "env": {},
             "envFile": "${workspaceFolder}/.env",
             "debugOptions": [

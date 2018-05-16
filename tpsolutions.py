@@ -92,13 +92,17 @@ class SolutionsCollection(object):
         # Save all images
         for solution_idx, solution in enumerate(self.__stack, 1):
             # Image filename
-            image_name = (output_dir + "\\Solution #{:0>2}.png"
-                          .format(solution_idx))
+            image_name = (
+                output_dir
+                / "Solution #{:0>2}.png".format(solution_idx)
+            )
             if solution.image:
                 try:
-                    solution.image.save(image_name)
+                    solution.image.save(str(image_name))
                 except Exception as err:
-                    message = "Fatal: Can't save image {}".format(image_name)
+                    message = "Fatal: Can't save image {}".format(
+                        str(image_name)
+                    )
                     raise ImageError(message, err)
 
 
