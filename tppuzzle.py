@@ -10,7 +10,6 @@ import numpy
 import time
 from pathlib import Path
 from PIL import ImageColor
-from threading import Thread
 from tperrors import ImageError, StatsError
 from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
@@ -31,7 +30,7 @@ class Puzzle(object):
         self.__stats = args.stats
         # Puzzle configuration for stats output
         self.__config = (
-            "{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2}"
+            "{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2}"
             .format(
                 args.rows,
                 args.columns,
@@ -116,20 +115,20 @@ class Puzzle(object):
         Method: Save puzzle solving statistics to CSV file
         """
         stats_file = Path.cwd() / "talos-puzzle-stats.csv"
-        puzzle_id = "P" + self.__config.replace(";", "")
+        puzzle_id = "P" + self.__config.replace(",", "")
         stats_line = (
             socket.gethostname()
-            + ";"
+            + ","
             + time.strftime("%d/%m/%Y %H:%M:%S")
-            + ";"
+            + ","
             + puzzle_id
-            + ";"
+            + ","
             + self.__config
-            + ";"
+            + ","
             + str(self.__positions.combinations_count)
-            + ";"
+            + ","
             + str(len(self.__solutions))
-            + ";"
+            + ","
             + time_spend
             + "\n"
         )
@@ -137,21 +136,20 @@ class Puzzle(object):
             try:
                 with stats_file.open("w") as f:
                     f.write(
-                        "\"sep=;\"\n"
-                        "Hostname;"
-                        "Date;"
-                        "Id;"
-                        "Rows;"
-                        "Columns;"
-                        "L Right;"
-                        "L Left;"
-                        "Step Right;"
-                        "Step Left;"
-                        "Tee;"
-                        "Bar;"
-                        "Square;"
-                        "Combinations;"
-                        "Solutions;"
+                        "Hostname,"
+                        "Date,"
+                        "Id,"
+                        "Rows,"
+                        "Columns,"
+                        "L Right,"
+                        "L Left,"
+                        "Step Right,"
+                        "Step Left,"
+                        "Tee,"
+                        "Bar,"
+                        "Square,"
+                        "Combinations,"
+                        "Solutions,"
                         "Elapsed Time\n"
                     )
                     f.write(stats_line)
@@ -242,8 +240,10 @@ class Puzzle(object):
                 crawler.join()
         stop = time.time()
         if self.__verbose:
-            print("Info: Time spent in solving puzzle: {:,.2f} secondes"
-                  .format(stop - start).replace(",", " "))
+            print(
+                "Info: Time spent in solving puzzle: {:,.2f} secondes"
+                .format(stop - start).replace(",", " ")
+            )
         if self.__stats:
             try:
                 self.__save_stats(
