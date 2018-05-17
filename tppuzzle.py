@@ -5,11 +5,13 @@
     Description:
         talos-puzzle puzzle definition
 """
-import os
+import socket
 import numpy
 import time
+from pathlib import Path
 from PIL import ImageColor
-from tperrors import ImageError
+from threading import Thread
+from tperrors import ImageError, StatsError
 from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
 from tppositions import PositionsStackCollection
@@ -25,14 +27,31 @@ class Puzzle(object):
         self.__verbose = args.verbose
         # Do we stop at first solution found
         self.__first = args.first
+        # Do we save puzzle solving statistics
+        self.__stats = args.stats
+        # Puzzle configuration for stats output
+        self.__config = (
+            "{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2}"
+            .format(
+                args.rows,
+                args.columns,
+                args.l_right,
+                args.l_left,
+                args.step_right,
+                args.step_left,
+                args.tee,
+                args.bar,
+                args.square
+            )
+        )
         # Images output
         self.__save_images = args.images
         self.__cell_size = args.cell_size
         self.__fill_color = ImageColor.getrgb(args.fill_color)
         self.__shape_color = ImageColor.getrgb(args.shape_color)
         self.__output_dir = (
-            args.output_dir
-            + "\\Board {}Rx{}C - {}LR {}LL {}SR {}SL {}TE {}BA {}SQ"
+            Path(args.output_dir)
+            / "Board {}Rx{}C - {}LR {}LL {}SR {}SL {}TE {}BA {}SQ"
             .format(
                 args.rows,
                 args.columns,
@@ -92,8 +111,64 @@ class Puzzle(object):
                 .format(self.__output_dir, self.__cell_size)
             )
 
+    def __save_stats(self, time_spend):
+        """
+        Method: Save puzzle solving statistics to CSV file
+        """
+        stats_file = Path.cwd() / "talos-puzzle-stats.csv"
+        puzzle_id = "P" + self.__config.replace(";", "")
+        stats_line = (
+            socket.gethostname()
+            + ";"
+            + time.strftime("%d/%m/%Y %H:%M:%S")
+            + ";"
+            + puzzle_id
+            + ";"
+            + self.__config
+            + ";"
+            + str(self.__positions.combinations_count)
+            + ";"
+            + str(len(self.__solutions))
+            + ";"
+            + time_spend
+            + "\n"
+        )
+        if not stats_file.is_file():
+            try:
+                with stats_file.open("w") as f:
+                    f.write(
+                        "\"sep=;\"\n"
+                        "Hostname;"
+                        "Date;"
+                        "Id;"
+                        "Rows;"
+                        "Columns;"
+                        "L Right;"
+                        "L Left;"
+                        "Step Right;"
+                        "Step Left;"
+                        "Tee;"
+                        "Bar;"
+                        "Square;"
+                        "Combinations;"
+                        "Solutions;"
+                        "Elapsed Time\n"
+                    )
+                    f.write(stats_line)
+            except OSError as err:
+                message = "Error: Can't create stats file " + str(stats_file)
+                raise StatsError(message, err)
+        else:
+            try:
+                with stats_file.open("a") as f:
+                    f.write(stats_line)
+            except OSError as err:
+                message = "Error: Can't save stats in file " + str(stats_file)
+                raise StatsError(message, err)
+
     def add_piece(self, piece):
-        """Method: add a piece to the collection
+        """
+        Method: add a piece to the collection
         """
         # Append to pieces collection
         self.__pieces.append(piece)
@@ -112,7 +187,7 @@ class Puzzle(object):
                 self.__board_rows,
                 self.__board_columns
             )
-        # Optimize the positions tree
+        # Optimize positions tree
         self.__positions.optimize()
         # Print config if needed
         if self.__verbose:
@@ -123,7 +198,7 @@ class Puzzle(object):
         max_depth = len(self.__pieces) - 2
         if max_depth < 0 and self.__positions.combinations_count > 0:
             # We have only one piece (a square or a bar) with one position and
-            # at least one. Then we have all the solution
+            # at least one. Then we have all the solutions
             self.__solutions.add(
                 self.__positions,
                 self.__board_rows,
@@ -131,32 +206,65 @@ class Puzzle(object):
                 [(0, 0)]
             )
         else:
+            # If we need to stop after first solution found
+            if self.__first:
+                # Create a signal thread on the solution collection, which
+                # will stop the crawlers after the first solution found
+                signaler = Thread(target=self.__solutions.solution_found)
+                signaler.start()
+            # Stack of crawler threads
+            crawler_threads = []
             # Each position of the first piece is a tree root
             for position_idx, position in enumerate(self.__positions[0]):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
                 # Init the board with root position
                 board = numpy.copy(position)
-                # Recursively goes trough positions combination
-                self.__positions.crawl_tree(
-                    self.__solutions,
-                    tree_path,
-                    board,
-                    max_depth
+                # Create the crawler_thread
+                crawler = Thread(
+                    target=self.__positions.crawl_tree,
+                    args=(
+                        self.__solutions,
+                        tree_path,
+                        board,
+                        max_depth
+                    )
                 )
+                crawler_threads.append(crawler)
+            # Start the crawler
+            for crawler in crawler_threads:
+                crawler.start()
+            if self.__first:
+                # Wait for the waiter to terminate
+                signaler.join()
+            # Wait for all threads to terminate
+            for crawler in crawler_threads:
+                crawler.join()
         stop = time.time()
         if self.__verbose:
             print("Info: Time spent in solving puzzle: {:,.2f} secondes"
                   .format(stop - start).replace(",", " "))
+        if self.__stats:
+            try:
+                self.__save_stats(
+                    "{:,.2f}"
+                    .format(stop - start).replace(",", " ")
+                )
+            except StatsError as err:
+                print(err.message, " with system error: ", err.syserror)
 
     def solutions(self):
         """Method: output the solutions if we have some"""
         # Report solutions
         if len(self.__solutions) != 0:
-            print(
-                "Puzzle solved ! Found {} unique solutions"
-                .format(len(self.__solutions))
-            )
+            if self.__first:
+                message = "Puzzle solved !"
+            else:
+                message = (
+                    "Puzzle solved ! Found {} unique solutions"
+                    .format(len(self.__solutions))
+                )
+            print(message)
             self.__solutions.echo()
         else:
             print("No solution found for the puzzle !")
@@ -165,11 +273,14 @@ class Puzzle(object):
         if self.__save_images:
             # Create directory to store the images
             try:
-                os.makedirs(self.__output_dir, exist_ok=True)
+
+                self.__output_dir.mkdir(parents=True, exist_ok=True)
             except OSError as err:
-                print("Fatal: Can\'t create output directory {}."
-                      " System message is: "
-                      .format(self.__output_dir), err)
+                print(
+                    "Fatal: Can\'t create output directory {} to save images."
+                    " System message is: "
+                    .format(str(self.__output_dir), err)
+                )
                 exit(1)
             # Draw all solutions
             self.__solutions.draw(self.__cell_size, self.__fill_color,

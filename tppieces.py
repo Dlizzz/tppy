@@ -69,10 +69,10 @@ class Piece(object):
 # Pieces definition
 pieces_set = {
     "Square": Piece("Square", "SQ", [(1, 1), (1, 1)]),
-    "L right": Piece("L right", "LR", [(1, 1), (1, 0), (1, 0)], 4),
-    "L left": Piece("L left", "LL", [(1, 1), (0, 1), (0, 1)], 4),
+    "L Right": Piece("L Right", "LR", [(1, 1), (1, 0), (1, 0)], 4),
+    "L Left": Piece("L Left", "LL", [(1, 1), (0, 1), (0, 1)], 4),
     "Bar": Piece("Bar", "BA", [(1, 1, 1, 1)], 2),
     "Tee": Piece("Tee", "TE", [(0, 1, 0), (1, 1, 1)], 4),
-    "Step right": Piece("Step right", "SR", [(0, 1, 1), (1, 1, 0)], 2),
-    "Step left": Piece("Step left", "SL", [(1, 1, 0), (0, 1, 1)], 2)
+    "Step Right": Piece("Step Right", "SR", [(0, 1, 1), (1, 1, 0)], 2),
+    "Step Left": Piece("Step Left", "SL", [(1, 1, 0), (0, 1, 1)], 2)
 }

@@ -7,6 +7,27 @@
 """
 
 import numpy
+from threading import local
+
+
+class CrawlerLocalData(local):
+    """Class: store thread local data"""
+    def __init__(self, current_node):
+        super().__init__()
+        self.current_node = current_node
+        self.next_piece_idx = current_node[0] + 1
+        self.position_idx = None
+        self.position = None
+        self.backup_board = None
+        self.nodes_crawled = 0
+        self.piece_idx = 0
+
+    @property
+    def next_node(self):
+        if self.position_idx is not None:
+            return self.next_piece_idx, self.position_idx
+        else:
+            return None
 
 
 class PositionsStackCollection(object):
@@ -16,8 +37,6 @@ class PositionsStackCollection(object):
         self.__stack = []
         # Total combinations count
         self.__combinations_count = 1
-        # Positions count per stack
-        self.__positions_count = ()
 
     def __len__(self):
         """Method: provide 'len()' method for the collection"""
@@ -31,10 +50,6 @@ class PositionsStackCollection(object):
     def combinations_count(self):
         return self.__combinations_count
 
-    @property
-    def positions_count(self):
-        return self.__positions_count
-
     def add(self, piece, board_rows, board_columns):
         """Method: create and add a stack of positions to the collection, for
            the given piece and board
@@ -42,7 +57,6 @@ class PositionsStackCollection(object):
         positions_stack = PositionsStack(piece, board_rows, board_columns)
         self.__stack.append(positions_stack)
         self.__combinations_count *= len(positions_stack)
-        self.__positions_count += (len(positions_stack),)
 
     def optimize(self):
         """Method: sort the collection of positions stacks, from smallest
@@ -56,38 +70,55 @@ class PositionsStackCollection(object):
 
     def crawl_tree(self, solutions, tree_path, board, max_depth):
         """ Method: Recursive function to go through the positions
-            tree and combine them to determine puzzle solutions
+            tree and combine them to determine puzzle solutions.
+            Function is thread safe and designed to be called from a Thread
+            object.
         """
-        current_node = tree_path[-1]
-        next_piece_idx = current_node[0] + 1
+        # New thread / call local data
+        local_data = CrawlerLocalData(tree_path[-1])
         # Combine current node with all nodes (positions) of next piece
-        for position_idx, position in enumerate(self.__stack[next_piece_idx]):
-            # Combine with next node
-            next_node = (next_piece_idx, position_idx)
+        for local_data.position_idx, local_data.position in enumerate(
+            self.__stack[local_data.next_piece_idx]
+        ):
+            # If signaler thread indicates that solution is found,
+            # exit immediately
+            if solutions.found.is_set():
+                break
             # Save current board
-            backup_board = numpy.copy(board)
+            local_data.backup_board = numpy.copy(board)
             # Combine the positions on the board and test it
-            board += position
+            board += local_data.position
             if numpy.max(board) <= 1:
                 # We have a valid combination with next node (no overlap of
                 # pieces) .Add next node to tree path
-                tree_path.append(next_node)
-                if current_node[0] == max_depth:
+                tree_path.append(local_data.next_node)
+                if local_data.current_node[0] == max_depth:
                     # We have reach the end of the tree branch, then we have a
-                    # solution. Add the solution to the solutions collection
-                    solutions.add(
-                        self,
-                        board.shape[0],
-                        board.shape[1],
-                        tree_path
-                    )
+                    # solution.
+                    # Locking the collection
+                    with solutions.lock:
+                        # Add the solution to the solutions collection
+                        solutions.add(
+                            self,
+                            board.shape[0],
+                            board.shape[1],
+                            tree_path
+                        )
+                        # Notify waiting threads that a solution has been added
+                        # and release the lock
+                        solutions.lock.notify_all()
                 else:
                     # Move to the next piece
-                    self.crawl_tree(solutions, tree_path, board, max_depth)
+                    self.crawl_tree(
+                        solutions,
+                        tree_path,
+                        board,
+                        max_depth
+                    )
                 # Restore tree path to current node
                 tree_path.pop()
             # Restore board to previous state and move to next position
-            board = numpy.copy(backup_board)
+            board = numpy.copy(local_data.backup_board)
 
 
 class PositionsStack(object):
