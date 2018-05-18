@@ -5,8 +5,10 @@
     Description:
         talos-puzzle solution definition
 """
-from PIL import Image, ImageDraw
 from threading import Condition, Event
+
+from PIL import Image, ImageDraw
+
 from tperrors import ImageError
 
 

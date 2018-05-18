@@ -6,14 +6,19 @@
         talos-puzzle puzzle definition
 """
 import socket
-import numpy
 import time
+import multiprocessing as mp
 from pathlib import Path
+
+import numpy
 from PIL import ImageColor
+
+import tpcrawler
+import tpcollector
 from tperrors import ImageError, StatsError
-from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
 from tppositions import PositionsStackCollection
+from tpsolutions import SolutionsCollection
 
 
 class Puzzle(object):
@@ -69,10 +74,12 @@ class Puzzle(object):
         self.__positions = PositionsStackCollection()
         # Collection of solutions
         self.__solutions = SolutionsCollection()
-        # Properties (read only)
         # Game board dimensions
         self.__board_rows = args.rows
         self.__board_columns = args.columns
+        # Subprocesses coordination
+        self.__queue = mp.Queue()
+        self.__found = mp.Event()
 
     @property
     def board_rows(self):
@@ -204,35 +211,52 @@ class Puzzle(object):
                 [(0, 0)]
             )
         else:
-            # If we need to stop after first solution found
-            if self.__first:
-                # Create a signal thread on the solution collection, which
-                # will stop the crawlers after the first solution found
-                signaler = Thread(target=self.__solutions.solution_found)
-                signaler.start()
-            # Stack of crawler threads
-            crawler_threads = []
+            # All processes will be spawned
+            mp.set_start_method("spawn")
+            # Create the solutions collector process and start it
+            collector = mp.Process(
+                target=tpcollector.collector,
+                args=(
+                    self.__solutions,
+                    self.__queue,
+                    self.__found,
+                    self.__first
+                )
+            )
+            collector.deamon = True
+            collector.start()
+            # Stack of crawler subprocesses
+            crawlers = []
             # Each position of the first piece is a tree root
             for position_idx, position in enumerate(self.__positions[0]):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
                 # Init the board with root position
                 board = numpy.copy(position)
-                # Create the crawler_thread
-                crawler = Thread(
-                    target=self.__positions.crawl_tree,
+                # Create the crawler subprocess
+                crawler = mp.Process(
+                    target=tpcrawler.crawler,
                     args=(
-                        self.__solutions,
+                        self.__positions,
                         tree_path,
                         board,
-                        max_depth
+                        max_depth,
+                        self.__queue,
+                        self.__found
                     )
                 )
-                crawler_threads.append(crawler)
-            # Start the crawler
-            for crawler in crawler_threads:
+                crawlers.append(crawler)
+            # Start the crawlers
+            for crawler in crawlers:
+                crawler.deamon = True
                 crawler.start()
+            
+
+
+
+
             if self.__first:
+                
                 # Wait for the waiter to terminate
                 signaler.join()
             # Wait for all threads to terminate

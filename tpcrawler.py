@@ -11,7 +11,7 @@ import numpy
 
 def crawler(positions, tree_path, board, max_depth, queue, found):
     """
-    Method: Recursive function to go through the positions
+    Function: Recursive function to go through the positions
     tree and combine them to determine puzzle solutions.
     Function is designed to be run in a subprocess.
     """
