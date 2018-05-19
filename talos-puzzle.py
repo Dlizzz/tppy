@@ -21,12 +21,12 @@
         numpy module
 """
 
-# Standards imports
+import multiprocessing as mp
+
 from tpparam import get_parameters
 from tppieces import pieces_set
 from tppuzzle import Puzzle
 
-# Global varibales
 __version__ = "0.0.1"
 __date__ = "2018-04-28"
 __author__ = "Denis Lambolez"
@@ -66,4 +66,5 @@ def main():
 
 
 if __name__ == "__main__":
+    mp.set_start_method("spawn")
     main()

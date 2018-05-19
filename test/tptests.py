@@ -6,13 +6,33 @@
         talos-puzzle testing
 """
 
-import os
 import sys
 from pathlib import Path
+from subprocess import run
 
 common_args = "--verbose --stats --images"
 
 test_configs = [
+    [
+        "--rows",
+        "1",
+        "--columns",
+        "4",
+        "--l-right",
+        "0",
+        "--l-left",
+        "0",
+        "--step-right",
+        "0",
+        "--step-left",
+        "0",
+        "--tee",
+        "1",
+        "--bar",
+        "0",
+        "--square",
+        "0",
+    ],
     [
         "--rows",
         "1",
@@ -114,6 +134,27 @@ test_configs = [
         "--square",
         "0",
     ],
+    [
+        "--first",
+        "--rows",
+        "6",
+        "--columns",
+        "6",
+        "--l-right",
+        "2",
+        "--l-left",
+        "2",
+        "--step-right",
+        "0",
+        "--step-left",
+        "3",
+        "--tee",
+        "2",
+        "--bar",
+        "0",
+        "--square",
+        "0",
+    ],
 ]
 
 
@@ -124,17 +165,15 @@ def main():
     except FileNotFoundError:
         print("Fatal: Can't find talos-puzzle.py script.")
         exit(1)
+    interpreter = Path(sys.executable)
     for config in test_configs:
-        command = (
-            sys.executable
-            + " "
-            + str(script)
-            + " "
-            + common_args
-            + " "
-            + " ".join(config)
+        command = "\"{}\" \"{}\" {} {}".format(
+            interpreter,
+            script,
+            common_args,
+            " ".join(config),
         )
-        os.system(command)
+        run(command, shell=True)
 
 
 if __name__ == "__main__":

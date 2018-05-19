@@ -6,15 +6,16 @@
         talos-puzzle puzzle definition
 """
 import socket
-import numpy
 import time
 from pathlib import Path
+
 from PIL import ImageColor
-from threading import Thread
+
+from tpcrawler import CrawlersCollection
 from tperrors import ImageError, StatsError
-from tpsolutions import SolutionsCollection
 from tppieces import PiecesCollection
 from tppositions import PositionsStackCollection
+from tpsolutions import SolutionsCollection
 
 
 class Puzzle(object):
@@ -31,7 +32,7 @@ class Puzzle(object):
         self.__stats = args.stats
         # Puzzle configuration for stats output
         self.__config = (
-            "{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2};{:0>2}"
+            "{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2},{:0>2}"
             .format(
                 args.rows,
                 args.columns,
@@ -64,16 +65,19 @@ class Puzzle(object):
                 args.square
             )
         )
+        # Game board dimensions
+        self.__board_rows = args.rows
+        self.__board_columns = args.columns
         # Collection of pieces
         self.__pieces = PiecesCollection()
         # Collection of positions per pieces
         self.__positions = PositionsStackCollection()
         # Collection of solutions
-        self.__solutions = SolutionsCollection()
-        # Properties (read only)
-        # Game board dimensions
-        self.__board_rows = args.rows
-        self.__board_columns = args.columns
+        self.__solutions = SolutionsCollection(
+            self.__positions,
+            self.__board_rows,
+            self.__board_columns
+        )
 
     @property
     def board_rows(self):
@@ -94,10 +98,10 @@ class Puzzle(object):
             )
         )
         print("Info: Solving puzzle with the following pieces set:")
-        for piece_idx, piece in enumerate(self.__pieces):
+        for positions in self.__positions:
             print(
                 "\t{: >10} with {:0>3} positions"
-                .format(piece.name, len(self.__positions[piece_idx]))
+                .format(positions.piece.name, len(positions))
             )
         print(
             "Info: Testing {:,d} combinations of positions"
@@ -116,20 +120,20 @@ class Puzzle(object):
         Method: Save puzzle solving statistics to CSV file
         """
         stats_file = Path.cwd() / "talos-puzzle-stats.csv"
-        puzzle_id = "P" + self.__config.replace(";", "")
+        puzzle_id = "P" + self.__config.replace(",", "")
         stats_line = (
             socket.gethostname()
-            + ";"
+            + ","
             + time.strftime("%d/%m/%Y %H:%M:%S")
-            + ";"
+            + ","
             + puzzle_id
-            + ";"
+            + ","
             + self.__config
-            + ";"
+            + ","
             + str(self.__positions.combinations_count)
-            + ";"
+            + ","
             + str(len(self.__solutions))
-            + ";"
+            + ","
             + time_spend
             + "\n"
         )
@@ -137,21 +141,20 @@ class Puzzle(object):
             try:
                 with stats_file.open("w") as f:
                     f.write(
-                        "\"sep=;\"\n"
-                        "Hostname;"
-                        "Date;"
-                        "Id;"
-                        "Rows;"
-                        "Columns;"
-                        "L Right;"
-                        "L Left;"
-                        "Step Right;"
-                        "Step Left;"
-                        "Tee;"
-                        "Bar;"
-                        "Square;"
-                        "Combinations;"
-                        "Solutions;"
+                        "Hostname,"
+                        "Date,"
+                        "Id,"
+                        "Rows,"
+                        "Columns,"
+                        "L Right,"
+                        "L Left,"
+                        "Step Right,"
+                        "Step Left,"
+                        "Tee,"
+                        "Bar,"
+                        "Square,"
+                        "Combinations,"
+                        "Solutions,"
                         "Elapsed Time\n"
                     )
                     f.write(stats_line)
@@ -199,51 +202,30 @@ class Puzzle(object):
         if max_depth < 0 and self.__positions.combinations_count > 0:
             # We have only one piece (a square or a bar) with one position and
             # at least one. Then we have all the solutions
-            self.__solutions.add(
-                self.__positions,
-                self.__board_rows,
-                self.__board_columns,
-                [(0, 0)]
-            )
+            self.__solutions.add([(0, 0)])
         else:
-            # If we need to stop after first solution found
-            if self.__first:
-                # Create a signal thread on the solution collection, which
-                # will stop the crawlers after the first solution found
-                signaler = Thread(target=self.__solutions.solution_found)
-                signaler.start()
-            # Stack of crawler threads
-            crawler_threads = []
+            # Collection of crawler subprocesses
+            crawlers = CrawlersCollection(
+                self.__positions,
+                max_depth,
+                self.__first
+            )
             # Each position of the first piece is a tree root
-            for position_idx, position in enumerate(self.__positions[0]):
+            for position_idx in range(len(self.__positions[0])):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
-                # Init the board with root position
-                board = numpy.copy(position)
-                # Create the crawler_thread
-                crawler = Thread(
-                    target=self.__positions.crawl_tree,
-                    args=(
-                        self.__solutions,
-                        tree_path,
-                        board,
-                        max_depth
-                    )
-                )
-                crawler_threads.append(crawler)
-            # Start the crawler
-            for crawler in crawler_threads:
-                crawler.start()
-            if self.__first:
-                # Wait for the waiter to terminate
-                signaler.join()
-            # Wait for all threads to terminate
-            for crawler in crawler_threads:
-                crawler.join()
+                # Add crawler to the collection
+                crawlers.add(tree_path)
+            # Start the crawlers
+            crawlers.start()
+            # Get the solutions
+            crawlers.get_solutions(self.__solutions)
         stop = time.time()
         if self.__verbose:
-            print("Info: Time spent in solving puzzle: {:,.2f} secondes"
-                  .format(stop - start).replace(",", " "))
+            print(
+                "Info: Time spent in solving puzzle: {:,.2f} secondes"
+                .format(stop - start).replace(",", " ")
+            )
         if self.__stats:
             try:
                 self.__save_stats(
