@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "d:\\Profiles\\dlambolez\\AppData\\Local\\Programs\\Python\\Python36\\python.exe",
+    "python.pythonPath": "C:\\Program Files\\Python36\\python.exe",
     "python.linting.pylintEnabled": false,
     "python.linting.pep8Enabled": false,
     "python.linting.enabled": true,

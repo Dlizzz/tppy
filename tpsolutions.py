@@ -5,7 +5,6 @@
     Description:
         talos-puzzle solution definition
 """
-from threading import Condition, Event
 
 from PIL import Image, ImageDraw
 
@@ -15,24 +14,15 @@ from tperrors import ImageError
 class SolutionsCollection(object):
     """Class: define a collection of solutions"""
 
-    def __init__(self):
+    def __init__(self, positions, board_rows, board_columns):
         """Constructor: initialize the solutions stack"""
         # Stack of Solution
         self.__stack = []
-        # Condition object (with underlyiong RLock)to implement a thread safe
-        # Solution addition to the collection, with notification waiting
-        # threads
-        self.__lock = Condition()
-        # Event to stop threads when a solution has been found
-        self.__found = Event()
-
-    @property
-    def lock(self):
-        return self.__lock
-
-    @property
-    def found(self):
-        return self.__found
+        # Board dimensions
+        self.__board_rows = board_rows
+        self.__board_columns = board_columns
+        # Positions collection
+        self.__positions = positions
 
     def __len__(self):
         """Method: override len() method for the collection"""
@@ -51,25 +41,14 @@ class SolutionsCollection(object):
                 break
         return is_in
 
-    def solution_found(self):
-        """Method: wait for the first solution to be found, then stops all
-           crawler threads by sending found event
-        """
-        with self.__lock:
-            while not self.__stack:
-                # Wait until notified (a solution has been found)
-                self.__lock.wait()
-            # Send found event to crawler threads to stop them
-            self.__found.set()
-
-    def add(self, positions, board_rows, board_columns, tree_path):
+    def add(self, tree_path):
         """Method: create and add a solution to the solutions stack, if not
            already exsiting. If solution alerady exists, do nothing.
         """
         solution = Solution(
-            positions,
-            board_rows,
-            board_columns,
+            self.__positions,
+            self.__board_rows,
+            self.__board_columns,
             tree_path
         )
         # Check if solutioin already existing, and drops it if yes

@@ -7,14 +7,11 @@
 """
 import socket
 import time
-import multiprocessing as mp
 from pathlib import Path
 
-import numpy
 from PIL import ImageColor
 
-import tpcrawler
-import tpcollector
+from tpcrawler import CrawlersCollection
 from tperrors import ImageError, StatsError
 from tppieces import PiecesCollection
 from tppositions import PositionsStackCollection
@@ -68,18 +65,19 @@ class Puzzle(object):
                 args.square
             )
         )
+        # Game board dimensions
+        self.__board_rows = args.rows
+        self.__board_columns = args.columns
         # Collection of pieces
         self.__pieces = PiecesCollection()
         # Collection of positions per pieces
         self.__positions = PositionsStackCollection()
         # Collection of solutions
-        self.__solutions = SolutionsCollection()
-        # Game board dimensions
-        self.__board_rows = args.rows
-        self.__board_columns = args.columns
-        # Subprocesses coordination
-        self.__queue = mp.Queue()
-        self.__found = mp.Event()
+        self.__solutions = SolutionsCollection(
+            self.__positions,
+            self.__board_rows,
+            self.__board_columns
+        )
 
     @property
     def board_rows(self):
@@ -100,10 +98,10 @@ class Puzzle(object):
             )
         )
         print("Info: Solving puzzle with the following pieces set:")
-        for piece_idx, piece in enumerate(self.__pieces):
+        for positions in self.__positions:
             print(
                 "\t{: >10} with {:0>3} positions"
-                .format(piece.name, len(self.__positions[piece_idx]))
+                .format(positions.piece.name, len(positions))
             )
         print(
             "Info: Testing {:,d} combinations of positions"
@@ -204,64 +202,24 @@ class Puzzle(object):
         if max_depth < 0 and self.__positions.combinations_count > 0:
             # We have only one piece (a square or a bar) with one position and
             # at least one. Then we have all the solutions
-            self.__solutions.add(
-                self.__positions,
-                self.__board_rows,
-                self.__board_columns,
-                [(0, 0)]
-            )
+            self.__solutions.add([(0, 0)])
         else:
-            # All processes will be spawned
-            mp.set_start_method("spawn")
-            # Create the solutions collector process and start it
-            collector = mp.Process(
-                target=tpcollector.collector,
-                args=(
-                    self.__solutions,
-                    self.__queue,
-                    self.__found,
-                    self.__first
-                )
+            # Collection of crawler subprocesses
+            crawlers = CrawlersCollection(
+                self.__positions,
+                max_depth,
+                self.__first
             )
-            collector.deamon = True
-            collector.start()
-            # Stack of crawler subprocesses
-            crawlers = []
             # Each position of the first piece is a tree root
-            for position_idx, position in enumerate(self.__positions[0]):
+            for position_idx in range(len(self.__positions[0])):
                 # Init tree path with root node
                 tree_path = [(0, position_idx)]
-                # Init the board with root position
-                board = numpy.copy(position)
-                # Create the crawler subprocess
-                crawler = mp.Process(
-                    target=tpcrawler.crawler,
-                    args=(
-                        self.__positions,
-                        tree_path,
-                        board,
-                        max_depth,
-                        self.__queue,
-                        self.__found
-                    )
-                )
-                crawlers.append(crawler)
+                # Add crawler to the collection
+                crawlers.add(tree_path)
             # Start the crawlers
-            for crawler in crawlers:
-                crawler.deamon = True
-                crawler.start()
-            
-
-
-
-
-            if self.__first:
-                
-                # Wait for the waiter to terminate
-                signaler.join()
-            # Wait for all threads to terminate
-            for crawler in crawler_threads:
-                crawler.join()
+            crawlers.start()
+            # Get the solutions
+            crawlers.get_solutions(self.__solutions)
         stop = time.time()
         if self.__verbose:
             print(

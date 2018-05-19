@@ -45,7 +45,7 @@ class PositionsStackCollection(object):
         """
         if self.__stack:
             self.__stack.sort(key=lambda stack: len(stack))
-            self.__stack.insert(0, self.__stack.pop())
+            # self.__stack.insert(0, self.__stack.pop())
 
 
 class PositionsStack(object):
