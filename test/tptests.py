@@ -161,9 +161,9 @@ test_configs = [
 def main():
     """ Script main function """
     try:
-        script = Path("../talos-puzzle.py").resolve(strict=True)
+        script = Path("../talospuzzle.py").resolve(strict=True)
     except FileNotFoundError:
-        print("Fatal: Can't find talos-puzzle.py script.")
+        print("Fatal: Can't find talospuzzle.py script.")
         exit(1)
     interpreter = Path(sys.executable)
     for config in test_configs:

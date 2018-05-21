@@ -8,7 +8,7 @@
 
 from PIL import Image, ImageDraw
 
-from tperrors import ImageError
+from tperrors import FileSystemError
 
 
 class SolutionsCollection(object):
@@ -84,7 +84,7 @@ class SolutionsCollection(object):
                     message = "Fatal: Can't save image {}".format(
                         str(image_name)
                     )
-                    raise ImageError(message, err)
+                    raise FileSystemError(message, err)
 
 
 class Solution(object):
@@ -130,7 +130,7 @@ class Solution(object):
         return solution_str
 
     def __eq__(self, other):
-        """ Method: ovveride equality. Solutions are equal if both 
+        """ Method: ovveride equality. Solutions are equal if both
             solution_label (including symmetrical solutions) are equal.
         """
         solution_label = other.solution_label
@@ -139,7 +139,7 @@ class Solution(object):
         # Horizontal symmetry
         fh_solution_label = [x[::-1] for x in other.solution_label]
         # Central symmetry
-        fhv_solution_label = fh_solution_label[::-1] 
+        fhv_solution_label = fh_solution_label[::-1]
         return (
             solution_label == self.__solution_label
             or fv_solution_label == self.__solution_label

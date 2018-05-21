@@ -1,9 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
-    Name: tpcrawler.py
-    Description:
-        talos-puzzle tree crawler collection definition and crawler process
+"""Module: Tree crawler process and processes collection
+
+Name: tpcrawler.py
+Classes:
+    CrawlersCollection: collection of crawler processes
+Functions:
+    crawl_tree: recursive tree crawler process
+Dependencies:
+    threading
+    multiprocessing
+    queue
+    numpy
 """
 
 import threading as td
@@ -14,36 +22,70 @@ import numpy
 
 
 class CrawlersCollection(object):
-    """ Class: tree crawler collection """
+    """Class: tree crawler processes collection
+
+    Public members:
+        Methods:
+            add: add a crawler to the collection, from the given tree path
+            start: start all the crawlers from the collection
+            get_solutions:
+    Private members:
+        Attributes:
+            __positions: PositionsStackCollection - puzzle collection of
+                positions
+            __max_depth: integer - max depth for tree crawling
+            __first: boolean - stop at first solution found
+            __queue: multiprocessing.Queue - communication queue for crawlers
+            __found: multiprocessing.Event - solution found event for crawlers
+            __crawlers: list of multiprocessing.Process - list of crawler
+                processes
+            __supervisor: threading.Thread - thread waiting for crawlers
+                termination
+            __done: threading.Event - all crawlers terminated event
+        Methods:
+            __supervise: watch all crawler processes for termination
+    Special methods:
+        __init__: override object constructor
+    """
+
     def __init__(self, positions, max_depth, first):
+        """Method: override object constructor
+
+        Inputs:
+            positions: PositionsStackCollection - puzzle collection of
+                positions
+            max_depth: integer - max depth for tree crawling
+            first: boolean - stop at first solution found
+        """
+
         self.__positions = positions
         self.__max_depth = max_depth
         self.__first = first
-        # Subprocesses coordination
         self.__queue = Queue()
         self.__found = Event()
-        # Stack of crawlers
         self.__crawlers = []
-        # Supervisor thread
         self.__supervisor = None
         self.__done = td.Event()
 
     def __supervise(self):
-        """
-        Method (protected): supervise the crawlers and raise the done event
-        when all crawlers have terminated
-        """
+        """Method: send 'done' event after all crawlers terminate"""
+
         for crawler in self.__crawlers:
             crawler.join()
         self.__done.set()
 
     def add(self, tree_path):
-        """ Method: add a tree crawler to the collection """
+        """Method: add a tree crawler to the collection
+
+        Inputs:
+            tree_path: list of integer tuples (row, col) - tree root
+        """
+
         # Get the tree root position
         piece_idx = tree_path[0][0]
         position_idx = tree_path[0][1]
         board = numpy.copy(self.__positions[piece_idx][position_idx])
-        # Create the crawler subprocess
+        # Create the crawler process and append it to the list
         crawler = Process(
             target=crawl_tree,
             args=(
@@ -59,7 +101,8 @@ class CrawlersCollection(object):
         self.__crawlers.append(crawler)
 
     def start(self):
-        """ Method: start all the crawlers """
+        """Method: start all the crawlers and the supervisor thread"""
+
         # Create the supervisor
         self.__supervisor = td.Thread(target=self.__supervise, daemon=True)
         # Start the crawlers
@@ -70,28 +113,46 @@ class CrawlersCollection(object):
         self.__supervisor.start()
 
     def get_solutions(self, solutions):
+        """Method: get solutions from the queue, add them to solutions
+        collection, until there is no more active crawler
+
+        Outputs:
+            solutions: SolutionsCollection, puzzle collection of solutions
         """
-        Method: get the next solution in the queue, add it to the given
-        solutions collection, until there is no more active crawler
-        """
+
+        # Loop while we have some crawlers running
         while not self.__done.is_set():
             solution_tree_path = None
             try:
+                # Try to get a solution from the queue
                 solution_tree_path = self.__queue.get_nowait()
             except Empty:
                 pass
             if solution_tree_path:
+                # Add it to the collection if we have one
                 solutions.add(solution_tree_path)
-        # Wait supervisor ending
+        # Wait for supervisor ending
         self.__supervisor.join()
 
 
 def crawl_tree(positions, tree_path, board, max_depth, queue, first, found):
+    """Function: Recursively go through the positions tree and combine them to
+    determine puzzle solutions. Designed to be ran in a separate process.
+
+    Inputs:
+        positions: PositionsStackCollection - puzzle collection of positions
+        tree_path: list of integer tuples (row, col) - valid tree path
+        board: numpy array - puzzle board
+        max_depth: integer - max depth for tree crawling
+        queue: multiprocessing.Queue - communication queue for crawlers
+        first: boolean - stop at first solution found
+        found: multiprocessing.Event - solution found event for crawlers
+    Outputs:
+        tree_path: list of integer tuples (row, col) - valid tree path
+        queue: multiprocessing.Queue - communication queue for crawlers
+        found: multiprocessing.Event - solution found event for crawlers
     """
-    Function: Recursive function to go through the positions
-    tree and combine them to determine puzzle solutions.
-    Function is designed to be run in a subprocess.
-    """
+
     current_node = tree_path[-1]
     next_piece_idx = current_node[0] + 1
     # Combine current node with all nodes (positions) of next piece
