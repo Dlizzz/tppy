@@ -32,11 +32,11 @@ class SolutionsCollection(object):
         """Method: ovverride '[]' (indexer) operator for the collection"""
         return self.__stack[index]
 
-    def __contains__(self, other):
+    def __contains__(self, solution):
         """Method: override 'in' operator for the collection"""
         is_in = False
-        for solution in self.__stack:
-            if other == solution:
+        for existing_solution in self.__stack:
+            if solution == existing_solution:
                 is_in = True
                 break
         return is_in
@@ -130,10 +130,22 @@ class Solution(object):
         return solution_str
 
     def __eq__(self, other):
-        """Method: ovveride equality. Solutions are equal if solution_lable are
-           equal.
+        """ Method: ovveride equality. Solutions are equal if both 
+            solution_label (including symmetrical solutions) are equal.
         """
-        return other.pieces_label == self.__solution_label
+        solution_label = other.solution_label
+        # Vertical symmetry
+        fv_solution_label = other.solution_label[::-1]
+        # Horizontal symmetry
+        fh_solution_label = [x[::-1] for x in other.solution_label]
+        # Central symmetry
+        fhv_solution_label = fh_solution_label[::-1] 
+        return (
+            solution_label == self.__solution_label
+            or fv_solution_label == self.__solution_label
+            or fh_solution_label == self.__solution_label
+            or fhv_solution_label == self.__solution_label
+        )
 
     @property
     def image(self):
@@ -146,12 +158,12 @@ class Solution(object):
         return self.__solution_path
 
     @property
-    def pieces_label(self):
+    def solution_label(self):
         """Property: solution with the pieces labels."""
         return self.__solution_label
 
     @property
-    def pieces_number(self):
+    def solution_pieces(self):
         """Property: solution with the pieces number"""
         return self.__solution_pieces
 
