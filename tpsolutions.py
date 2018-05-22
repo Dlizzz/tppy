@@ -8,7 +8,7 @@
 
 from PIL import Image, ImageDraw
 
-from tperrors import FileSystemError
+from tperrors import TalosFileSystemError
 
 
 class SolutionsCollection(object):
@@ -84,7 +84,7 @@ class SolutionsCollection(object):
                     message = "Fatal: Can't save image {}".format(
                         str(image_name)
                     )
-                    raise FileSystemError(message, err)
+                    raise TalosFileSystemError(message, err)
 
 
 class Solution(object):

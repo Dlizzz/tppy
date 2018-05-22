@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import ImageColor
 
 from tpcrawler import CrawlersCollection
-from tperrors import FileSystemError
+from tperrors import TalosFileSystemError
 from tppieces import PiecesCollection
 from tppositions import PositionsStackCollection
 from tpsolutions import SolutionsCollection
@@ -160,14 +160,14 @@ class Puzzle(object):
                     f.write(stats_line)
             except OSError as err:
                 message = "Error: Can't create stats file " + str(stats_file)
-                raise FileSystemError(message, err)
+                raise TalosFileSystemError(message, err)
         else:
             try:
                 with stats_file.open("a") as f:
                     f.write(stats_line)
             except OSError as err:
                 message = "Error: Can't save stats in file " + str(stats_file)
-                raise FileSystemError(message, err)
+                raise TalosFileSystemError(message, err)
 
     def add_piece(self, piece):
         """
@@ -232,7 +232,7 @@ class Puzzle(object):
                     "{:,.2f}"
                     .format(stop - start).replace(",", " ")
                 )
-            except FileSystemError as err:
+            except TalosFileSystemError as err:
                 print(err.message, " with system error: ", err.syserror)
 
     def solutions(self):
@@ -270,6 +270,6 @@ class Puzzle(object):
             # Save all solutions
             try:
                 self.__solutions.save(self.__output_dir)
-            except FileSystemError as err:
+            except TalosFileSystemError as err:
                 print(err.message, " with system error: ", err.syserror)
                 exit(1)

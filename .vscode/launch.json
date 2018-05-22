@@ -18,7 +18,7 @@
                 "--stats",
                 "--images",
                 "--rows",
-                "-1",
+                "6",
                 "--columns",
                 "6",
                 "--l-right",

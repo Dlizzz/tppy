@@ -28,7 +28,7 @@ class CrawlersCollection(object):
         Methods:
             add: add a crawler to the collection, from the given tree path
             start: start all the crawlers from the collection
-            get_solutions:
+            get_solutions: get solutions from the queue
     Private members:
         Attributes:
             __positions: PositionsStackCollection - puzzle collection of

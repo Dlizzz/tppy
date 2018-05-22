@@ -71,12 +71,11 @@ Dependencies:
 """
 
 import multiprocessing as mp
-from argparse import ArgumentError
 
 from tpparam import get_parameters
 from tppieces import pieces_set
 from tppuzzle import Puzzle
-from tperrors import TalosError
+from tperrors import TalosArgumentError, TalosFileSystemError
 
 __version__ = "2.1.0"
 __date__ = "2018-05-21"
@@ -91,11 +90,8 @@ def main():
     # Get puzzle parameters from command line
     try:
         args = get_parameters()
-    except ArgumentError as err:
-        print("Argument error: {} - {}".format(err.argument_name, err.message))
-        exit(1)
-    except TalosError as err:
-        print("Puzzle setup error: {}".format(err.message))
+    except TalosArgumentError as err:
+        print("Argument error: {} - {}".format(err.argument, err.message))
         exit(1)
 
     # Create board
@@ -118,10 +114,16 @@ def main():
         puzzle.add_piece(pieces_set["Step Left"])
 
     # Solve the puzzle
-    puzzle.solve()
+    try:
+        puzzle.solve()
+    except TalosFileSystemError as err:
+        print(err.message, " with system error: ", err.syserror)
 
     # Print the solutions and save the images if needed
-    puzzle.solutions()
+    try:
+        puzzle.solutions()
+    except TalosFileSystemError as err:
+        print(err.message, " with system error: ", err.syserror)
 
 
 # Application entry point

@@ -25,7 +25,7 @@ import os
 
 from PIL import ImageColor
 
-from tperrors import TalosError
+from tperrors import TalosArgumentError
 
 
 DESCRIPTION_TEXT = """Try to solve the given puzzle and print status
@@ -71,7 +71,7 @@ class WriteableDir(argparse.Action):
     Special methods:
         __call__: override argparse.Action __call__
     Exceptions:
-        argparse.ArgumentError: path not valid or not writeable
+        TalosArgumentError: path not valid or not writeable
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -86,20 +86,20 @@ class WriteableDir(argparse.Action):
         Outputs:
             namespace: Namespace - object that will be returned by parse_args()
         Exceptions:
-            argparse.ArgumentError: path not valid or not writeable
+            TalosArgumentError: path not valid or not writeable
         """
 
         if not os.path.isdir(values):
-            raise argparse.ArgumentError(
-                super().argument,
+            raise TalosArgumentError(
                 "{} is not a valid path"
-                .format(values)
+                .format(values),
+                option_string
             )
         if not os.access(values, os.W_OK):
-            raise argparse.ArgumentError(
-                super().argument,
+            raise TalosArgumentError(
                 "{} is not a writeable dir"
-                .format(values)
+                .format(values),
+                option_string
             )
         setattr(namespace, self.dest, values)
 
@@ -112,7 +112,7 @@ class ValidColorName(argparse.Action):
     Special methods:
         __call__: override argparse.Action __call__
     Exceptions:
-        argparse.ArgumentError: value is not a valid HTML color name
+        TalosArgumentError: value is not a valid HTML color name
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -127,15 +127,15 @@ class ValidColorName(argparse.Action):
         Outputs:
             namespace: Namespace - object that will be returned by parse_args()
         Exceptions:
-            argparse.ArgumentError: value not strictly positive
+            TalosArgumentError: value not strictly positive
         """
 
         try:
             ImageColor.getrgb(values)
         except ValueError:
-            raise argparse.ArgumentError(
-                super().argument,
-                "Not a valid HTML color name !"
+            raise TalosArgumentError(
+                "Not a valid HTML color name !",
+                option_string
             )
         setattr(namespace, self.dest, values)
 
@@ -148,7 +148,7 @@ class StrictlyPositive(argparse.Action):
     Special methods:
         __call__: override argparse.Action __call__
     Exceptions:
-        argparse.ArgumentError: value is not strictly positive
+        TalosArgumentError: value is not strictly positive
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -163,13 +163,13 @@ class StrictlyPositive(argparse.Action):
         Outputs:
             namespace: Namespace - object that will be returned by parse_args()
         Exceptions:
-            argparse.ArgumentError: value not strictly positive
+            TalosArgumentError: value not strictly positive
         """
 
         if not values > 0:
-            raise argparse.ArgumentError(
-                super().argument,
-                "Value is not strictly positive"
+            raise TalosArgumentError(
+                "Value is not strictly positive",
+                option_string
             )
         setattr(namespace, self.dest, values)
 
@@ -182,7 +182,7 @@ class Positive(argparse.Action):
     Special methods:
         __call__: override argparse.Action __call__
     Exceptions:
-        argparse.ArgumentError: value is not positive or null
+        TalosArgumentError: value is not positive or null
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -197,13 +197,13 @@ class Positive(argparse.Action):
         Outputs:
             namespace: Namespace - object that will be returned by parse_args()
         Exceptions:
-            argparse.ArgumentError: value not strictly positive
+            TalosArgumentError: value not strictly positive
         """
 
         if not values >= 0:
-            raise argparse.ArgumentError(
-                super().argument,
-                "Value is not positive or null"
+            raise TalosArgumentError(
+                "Value is not positive or null",
+                option_string
             )
         setattr(namespace, self.dest, values)
 
@@ -214,7 +214,7 @@ def get_parameters():
     Return:
         args: argparse.args - the validated arguments
     Exceptions:
-        argparse.ArgumentError: invalid argument
+        TalosArgumentError: invalid argument
     """
     # Create parser and define parameters
     parser = argparse.ArgumentParser(description=DESCRIPTION_TEXT,
@@ -349,6 +349,9 @@ def get_parameters():
             + args.step_left
         ) * 4
     ):
-        raise TalosError("Board size must equal sum of pieces size (4)")
+        raise TalosArgumentError(
+            "Board size must equal sum of pieces size (4)",
+            "--rows x --columns"
+        )
 
     return args

@@ -5,7 +5,8 @@
 Name: tperrors.py
 Exception classes:
     TalosError: base class for application exceptions
-    FileSystemError: errors in saving an image or stats
+    TalosArgumentError: errors in command line arguments
+    TalosFileSystemError: errors in saving an image or stats
 """
 
 
@@ -32,8 +33,33 @@ class TalosError(Exception):
         self.message = message
 
 
-class FileSystemError(TalosError):
-    """Exception class: raised for errors in writing on the filesystem.
+class TalosArgumentError(TalosError):
+    """Exception class: command line arguments arrors
+
+    Inherit:
+        TalosError
+    Public members:
+        Attributes:
+            message: string - explanation of the error
+            argument: string - the faulty argument
+    Special methods:
+        __init__: extend TalosError constructor
+    """
+
+    def __init__(self, message, argument):
+        """Method: extend Exception constructor
+
+        Inputs:
+            argument: string - the faulty argument
+            message: string - explanation of the error
+        """
+
+        super().__init__(message)
+        self.argument = argument
+
+
+class TalosFileSystemError(TalosError):
+    """Exception class: errors in writing on the filesystem.
 
     Inherit:
         TalosError
