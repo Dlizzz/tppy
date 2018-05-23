@@ -77,8 +77,8 @@ from tppieces import pieces_set
 from tppuzzle import Puzzle
 from tperrors import TalosArgumentError, TalosFileSystemError
 
-__version__ = "2.1.0"
-__date__ = "2018-05-21"
+__version__ = "3.0"
+__date__ = "2018-05-23"
 __author__ = "Denis Lambolez"
 __contact__ = "denis.lambolez@gmail.com"
 __license__ = "LGPL-3.0"
