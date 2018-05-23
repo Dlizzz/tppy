@@ -1,6 +1,6 @@
-﻿# talos-puzzle
+﻿# tppy
 
-This python 3 script solves the Sigil puzzles in Talos Principle game from Croteam: <http://www.croteam.com/talosprinciple/>
+This python 3 application solves the Sigil puzzles in Talos Principle game from Croteam: <http://www.croteam.com/talosprinciple/>
 
 Puzzle board is made of Rows x Columns cells.
 Column is the horizontal dimension.
@@ -17,7 +17,7 @@ The puzzle can use the following pieces:
 
 The pieces can be flipped horizontally and vertically.
 
-Solutions (if they exist) are output on the console and can be saved as PNG images.
+Solutions (if they exist) are output on the console and can be saved as PNG images. Solutions are "uniques", i.e. excluding symmetrical solutions.
 
 ## Command line arguments
 
@@ -34,31 +34,39 @@ Solutions (if they exist) are output on the console and can be saved as PNG imag
 - --step-right #: Number of Step right shape pieces (default: 0)
 - --step-left #: Number of Step left shape pieces (default: 0)
 - --images: Output solutions as png images (toggle)
-- --output-dir dir: Directory where to output png images (default: script dir)
+- --output-dir dir: Directory where to output png images (default: application dir)
 - --cell-size #: Size in pixels of one cell of the board (default: 100)
 - --shape-color colorname: Color name (HTML) of the shape color (default: "Yellow")
 - --fill-color colorname: Color name (HTML) of the fill color (default: "DatkMagenta")
 
 ## Requirements
 
-The script is using the `pillow (PIL fork)` library for images generation and the `numpy` library for matrix manipulation
+The application is using the `pillow (PIL fork)` library for images generation and the `numpy` library for matrix manipulation
+
+The application has been developped in using Python 3.6.5 (not tested with Python 2), on Windows 10 and Ubuntu 18.04. 
 
 ## Algorithm
 
-To go through the tree of combinations, we use a "go deep" approach as opposed to a "go by level" approach. It means that as soon as we have a valid combination we go to the next piece (one level deeper), trying to find a possible solution as soon as possible. The path is more complex to manage (need to keep track of the path and being able to go backward on it) and may be a little bit slower, but it has a very good side effect, you don't need to store all the combinations (as with the "go by level" approach), just the one for the current node. So, in terms of memory management, it's much, much more performant.
+The global approach is the following:
 
-A "go by level" approach means that you combine each valid combinations of one level with all nodes of the next level, store the new valid combinations and move to next level. It's faster but it requires a lot of memory space.
+- Generate all possible positions of each given piece on the board, some pieces having different patterns due to rotations
+- Combine all the generated positions together to find the solutions (tree of combinations). There is one tree of combinations for each position of the first piece.
+- To improve performance dead branches are dropped immediately. A branch is "dead" when a tested position overlaps with an existing combination of positions.
+
+To go through the tree of combinations, we use a "go deep" approach as opposed to a "go by level" approach. It means that as soon as we have a valid combination of pieces (no overlap), we go to the next piece (one level deeper), trying to find a possible solution as soon as possible. This is achieved through a recursive approach, drasticfally reducing the amount of memory needed for a "go by level" approach.
+
+A "go by level" approach means that you combine each valid combinations of one level (one piece) with all nodes of the next level (next piece), store the new valid combinations and move to next level. It's faster but it requires a lot of memory.
 
 ## Performances
 
-The script uses a brute force approach:
+The application uses a brute force approach with paralelization (multiprocessing) of a recursive function. There is one process per tree of combinations, executing a tree crawler recursive function.
 
-- Generate all possible positions of each given piece on the board, some pieces having different patterns due to possible rotations
-- Combine all the generated positions together to find the solutions (tree of combinations)
-- To improve performance dead branches are dropped immediately. A branch is "dead" when a tested position overlaps with an existing combination of positions.
-- Even with the early drop of dead branches, it could take some time to solve large puzzles and find all their possible solutions. As an example, to solve the red puzzle with 8 columns and 7 rows with 4 square, 4 tee, 2 bars, 1 step left, 1 step right, 1 l left and 1 l right, the script has to go through 577 289 330 256 198 172 046 386 176 combinations of pieces. It's why there is the option "first to stop after finding the first solution (no need to find all solutions for the game).
+The application is using multiprocessing instead of threading, as the tree crawling job is computational intensive, which is not adapted to Python threads, because of the Global Interpreter Lock. Python threads are adapeted to I/O intensive jobs. The GIL limits execution to one thread at a time, switching between them only when they are waiting for I/O.
+
+Be aware that multiprocessing can put put a lot of pressure on the system. With large puzzles, the application can spawn 100+ processes, each of them doing computational intensive job. It could easily freeze your system.
+
+Even with the early drop of dead branches, it could take some time to solve large puzzles and find all their possible solutions. As an example, to solve the red puzzle with 8 columns and 7 rows with 4 square, 4 tee, 2 bars, 1 step left, 1 step right, 1 l left and 1 l right, the application has to go through 577 289 330 256 198 172 046 386 176 combinations of pieces. It's why there is the option "first", to stop after finding the first solution (no need to find all solutions for the game).
 
 ## Todo
 
 - A javascript interface to configure the puzzle and show the results.
-- Move to multithread for going trough the tree, at least one thread for each tree root.

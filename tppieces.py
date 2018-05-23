@@ -1,40 +1,97 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""
-    Name: tppiece.py
-    Description:
-        talos-puzzle pieces definition
+"""Define Piece and PiecesCollection
+
+Name: tppieces.py
+Classes:
+    PiecesCollection: collection of Piece - pieces set to solve the puzzle
+    Piece: piece description
+Attributes:
+    pieces_set: static dict of Piece - description of all pieces
+Dependencies:
+    numpy
 """
 
 import numpy
 
 
 class PiecesCollection(object):
-    """Class: define a collection of pieces"""
+    """Define a collection of pieces to solve the puzzle
+
+    Public members:
+        Methods:
+            append: append a existing piece to the collection
+    Private members:
+        Attributes:
+            __stack: list of Piece - store the pieces
+        Methods:
+            __supervise: watch all crawler processes for termination
+    Special methods:
+        __init__: override object constructor
+        __len__: provide len method, # of items in the collection
+        __getitem__: provide indexer ([]) operator, collection is iterable
+    """
 
     def __init__(self):
-        """Constructor: initialize the pieces stack"""
+        """Initialize the pieces stack"""
+
         self.__stack = []
 
     def __len__(self):
-        """Method: ovverride 'len()' method for the collection"""
+        """Provide len method, # of items in the collection
+
+        Return: integer - # items in the collection
+        """
+
         return len(self.__stack)
 
     def __getitem__(self, index):
-        """Method: ovverride '[]' (indexer) operator for the collection"""
+        """Provide [] operator, collection is iterable
+
+        Inputs:
+            index: integer - index of the requested item
+        Return: Piece - the requested piece
+        """
+
         return self.__stack[index]
 
     def append(self, piece):
-        """Method: add a piece to the collection"""
+        """Append given piece to the collection
+
+        Inputs:
+            piece: Piece - piece to append to the collection
+        """
+
         self.__stack.append(piece)
 
 
 class Piece(object):
-    """Class: puzzle piece definition"""
+    """Define a piece
+
+    Public members:
+        Properties:
+            name: string - name of the piece
+            label: string - label of the piece
+            patterns: list of numpy arrays - patterns of the piece
+    Private members:
+        Attributes:
+            __name: string - name of the piece
+            __label: string - label of the piece
+            __patterns: list of numpy arrays - patterns of the piece
+    Special methods:
+        __init__: override object constructor
+    """
 
     def __init__(self, name, label, pattern, rotations_count=1):
-        """Constructor: create the piece, with its patterns"""
-        # Protected members
+        """Create the piece, with its patterns
+
+        Inputs:
+            name: string - name of the piece
+            label: string - label of the piece
+            pattern: list of tuples - initial pattern of the piece
+            rotations_count: integer - # of 90° rotations to do to obtain all
+                the patterns of the piece
+        """
         # Stack of piece patterns
         self.__patterns = [numpy.array(pattern, numpy.uint8)]
         for x in range(1, rotations_count):
@@ -55,14 +112,20 @@ class Piece(object):
 
     @property
     def name(self):
+        """string - name of piece"""
+
         return self.__name
 
     @property
     def label(self):
+        """string - label of piece"""
+
         return self.__label
 
     @property
     def patterns(self):
+        """list of numpy arrays - patterns of piece"""
+
         return self.__patterns
 
 
