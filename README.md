@@ -43,6 +43,8 @@ Solutions (if they exist) are output on the console and can be saved as PNG imag
 
 The application is using the `pillow (PIL fork)` library for images generation and the `numpy` library for matrix manipulation
 
+The application has been developped in using Python 3.6.5 (not tested with Python 2), on Windows 10 and Ubuntu 18.04. 
+
 ## Algorithm
 
 The global approach is the following:

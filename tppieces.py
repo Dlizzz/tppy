@@ -40,7 +40,7 @@ class PiecesCollection(object):
     def __len__(self):
         """Provide len method, # of items in the collection
 
-        Return: integer - # items in the collection 
+        Return: integer - # items in the collection
         """
 
         return len(self.__stack)

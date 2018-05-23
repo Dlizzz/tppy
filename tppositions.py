@@ -43,7 +43,7 @@ class PositionsStackCollection(object):
 
     def __len__(self):
         """Provide len method, # of items in the collection
-        
+
         Return: integer - # of items in the collection
         """
 
@@ -94,7 +94,7 @@ class PositionsStack(object):
 
     Public members:
         Properties:
-            piece: Piece - the piece of which we have the positions  
+            piece: Piece - the piece of which we have the positions
     Private members:
         Attributes:
             __stack: list of numpy arrays - store the positions for the piece
@@ -115,7 +115,7 @@ class PositionsStack(object):
             board_columns: integer - number of columns on the board
         """
 
-        # Keep reference to the piece 
+        # Keep reference to the piece
         self.__piece = piece
         # Positions stack
         self.__stack = []
@@ -146,7 +146,7 @@ class PositionsStack(object):
 
         Inputs:
             index: integer - index of the requested item
-        Return: numpy array - a piece position
+        Return: numpy array - position of a piece
         """
 
         return self.__stack[index]
