@@ -1,13 +1,25 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""Define the Puzzle
+
+Name: tppuzzle.py
+Classes:
+    Puzzle: the Puzzle
+Dependencies:
+    pathlib
+    socket
+    time
+    PIL
+    tpcrawler
+    tperrors
+    tppieces
+    tppositions
+    tpsolutions
 """
-    Name: tppuzzle.py
-    Description:
-        talos-puzzle puzzle definition
-"""
-import socket
-import time
+
 from pathlib import Path
+from socket import gethostname
+from time import strftime, time
 
 from PIL import ImageColor
 
@@ -19,11 +31,48 @@ from tpsolutions import SolutionsCollection
 
 
 class Puzzle(object):
-    """Class: game board and stack of solutions"""
+    """The puzzle
+
+    Private members:
+        Attributes:
+            __verbose: boolean - print verbose messages if True
+            __first: boolean - stop after first solution found
+            __stats: boolean - save stats in CSV file
+            __config: string - puzzle configuration in one line
+            __save_images: boolean - save solutions PNG images if True
+            __cell_size: integer - size in pixels of a board cell
+            __fill_color: RGB tuples of integer - color of the cell
+            __shape_color: RGB tuples of integer - color of the cell shape
+            __output_dir: pathlib.Path - directory where to save the images
+            __board_rows: integer - # of rows on the board
+            __board_columns: integer - # of columns on the board
+            __pieces: PiecesCollection - collection of pieces
+            __positions: PositionsStackCollection - collection of positions
+            __solutions: SolutionsCollection - collection of solutions
+        Methods:
+            __print_config: Print puzzle configuration
+            __save_stats: Save puzzle solving statistics to CSV file
+    Public members:
+        Methods:
+            add_piece: Add a piece to the puzzle set of pieces
+            solve: Solve the puzzle
+            solutions: Output and save the solutions if we have some
+    Special methods:
+        __init__: override object constructor
+    Properties:
+        board_rows: integer - # of rows on the board
+        board_columns: integer - # of columns on the board
+    Exceptions:
+        TalosFileSystemError: errors in saving stats or images
+    """
 
     def __init__(self, args):
-        """Constructor: init the puzzle with rows x columns dimension"""
-        # Protected members
+        """Puzzle initialization from the given arguments
+
+        Inputs:
+            args: argparse.args - command line arguments
+        """
+
         # Do we have to be verbose
         self.__verbose = args.verbose
         # Do we stop at first solution found
@@ -81,14 +130,19 @@ class Puzzle(object):
 
     @property
     def board_rows(self):
+        """integer - # of rows on the board"""
+
         return self.__board_rows
 
     @property
     def board_columns(self):
+        """integer - # of columns on the board"""
+
         return self.__board_columns
 
     def __print_config(self):
-        """Method: print puzzle configuration"""
+        """Print puzzle configuration"""
+
         print(
             "Info: Puzzle board is {} rows x {} columns (size = {})"
             .format(
@@ -116,15 +170,20 @@ class Puzzle(object):
             )
 
     def __save_stats(self, time_spend):
+        """Save puzzle solving statistics to CSV file
+
+        Inputs:
+            time_spend: integer - time spend in seconds
+        Exceptions:
+            TalosFileSystemError: errors in saving stats
         """
-        Method: Save puzzle solving statistics to CSV file
-        """
+
         stats_file = Path.cwd() / "talos-puzzle-stats.csv"
         puzzle_id = "P" + self.__config.replace(",", "")
         stats_line = (
-            socket.gethostname()
+            gethostname()
             + ","
-            + time.strftime("%d/%m/%Y %H:%M:%S")
+            + strftime("%d/%m/%Y %H:%M:%S")
             + ","
             + puzzle_id
             + ","
@@ -170,19 +229,18 @@ class Puzzle(object):
                 raise TalosFileSystemError(message, err)
 
     def add_piece(self, piece):
+        """Add a piece to the puzzle set of pieces
+
+        Inputs:
+            piece: Piece - the piece to add
         """
-        Method: add a piece to the collection
-        """
+
         # Append to pieces collection
         self.__pieces.append(piece)
 
     def solve(self):
-        """Method (public):
-           Solve the puzzle by going trhough all combinations of pieces
-           positions, moving horizontally in the tree, i.e. each time we have a
-           valid combination for a piece, test it with the next piece
-           positions.
-        """
+        """Solve the puzzle"""
+
         # Generate positions tree
         for piece in self.__pieces:
             self.__positions.add(
@@ -196,7 +254,7 @@ class Puzzle(object):
         if self.__verbose:
             self.__print_config()
         # Start crawling the tree
-        start = time.time()
+        start = time()
         # Maximum depth to reach in the tree (one level before the last one)
         max_depth = len(self.__pieces) - 2
         if max_depth < 0 and self.__positions.combinations_count > 0:
@@ -220,7 +278,7 @@ class Puzzle(object):
             crawlers.start()
             # Get the solutions
             crawlers.get_solutions(self.__solutions)
-        stop = time.time()
+        stop = time()
         if self.__verbose:
             print(
                 "Info: Time spent in solving puzzle: {:,.2f} secondes"
@@ -236,7 +294,8 @@ class Puzzle(object):
                 print(err.message, " with system error: ", err.syserror)
 
     def solutions(self):
-        """Method: output the solutions if we have some"""
+        """Output and save the solutions if we have some"""
+
         # Report solutions
         if len(self.__solutions) != 0:
             if self.__first:

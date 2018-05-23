@@ -155,6 +155,26 @@ test_configs = [
         "--square",
         "0",
     ],
+    [
+        "--rows",
+        "4",
+        "--columns",
+        "4",
+        "--l-right",
+        "0",
+        "--l-left",
+        "0",
+        "--step-right",
+        "0",
+        "--step-left",
+        "0",
+        "--tee",
+        "0",
+        "--bar",
+        "4",
+        "--square",
+        "0",
+    ],
 ]
 
 

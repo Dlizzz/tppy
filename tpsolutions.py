@@ -240,7 +240,7 @@ class Solution(object):
         """Provide equality. Solutions are equal if both
             solution_label (including symmetrical solutions) are equal.
 
-        Return: boolean - True is solutions are equal
+        Return: boolean - True if solutions are equal
         """
 
         solution_label = other.solution_label
@@ -292,7 +292,8 @@ class Solution(object):
 
         # Create image with a drawing context
         self.__image = Image.new(
-            "RGB", (
+            "RGB",
+            (
                 self.__board_columns * cell_size,
                 self.__board_rows * cell_size
             ),
@@ -312,22 +313,26 @@ class Solution(object):
             for col in range(self.__board_columns - 1):
                 # Look on the right side of the cell and draw border
                 # if cell on the right is different
-                if (self.__solution_pieces[row][col]
-                        != self.__solution_pieces[row][col + 1]):
-                    X0 = (col + 1) * cell_size - 1
-                    Y0 = row * cell_size
-                    X1 = X0
-                    Y1 = (row + 1) * cell_size - 1
-                    draw.line([(X0, Y0), (X1, Y1)], shape_color, 2)
+                if (
+                    self.__solution_pieces[row][col]
+                    != self.__solution_pieces[row][col + 1]
+                ):
+                    x0 = (col + 1) * cell_size - 1
+                    y0 = row * cell_size
+                    x1 = x0
+                    y1 = (row + 1) * cell_size - 1
+                    draw.line([(x0, y0), (x1, y1)], shape_color, 2)
         # Draw borders bellow pieces
         for row in range(self.__board_rows - 1):
             for col in range(self.__board_columns):
                 # Look bellow the cell and draw border
                 # if cell bellow is different
-                if (self.__solution_pieces[row][col]
-                        != self.__solution_pieces[row + 1][col]):
-                    X0 = col * cell_size
-                    Y0 = (row + 1) * cell_size - 1
-                    X1 = (col + 1) * cell_size - 1
-                    Y1 = Y0
-                    draw.line([(X0, Y0), (X1, Y1)], shape_color, 2)
+                if (
+                    self.__solution_pieces[row][col]
+                    != self.__solution_pieces[row + 1][col]
+                ):
+                    x0 = col * cell_size
+                    y0 = (row + 1) * cell_size - 1
+                    x1 = (col + 1) * cell_size - 1
+                    y1 = y0
+                    draw.line([(x0, y0), (x1, y1)], shape_color, 2)
