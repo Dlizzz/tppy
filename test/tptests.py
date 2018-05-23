@@ -3,7 +3,7 @@
 """
     Name: tptests.py
     Description:
-        talos-puzzle testing
+        tppy testing
 """
 
 import sys
@@ -161,9 +161,9 @@ test_configs = [
 def main():
     """ Script main function """
     try:
-        script = Path("../talospuzzle.py").resolve(strict=True)
+        script = Path("../tppy.py").resolve(strict=True)
     except FileNotFoundError:
-        print("Fatal: Can't find talospuzzle.py script.")
+        print("Fatal: Can't find tppy.py script.")
         exit(1)
     interpreter = Path(sys.executable)
     for config in test_configs:

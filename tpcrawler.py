@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Module: Tree crawler process and processes collection
+"""Tree crawler process and processes collection
 
 Name: tpcrawler.py
 Classes:
@@ -22,7 +22,7 @@ import numpy
 
 
 class CrawlersCollection(object):
-    """Class: tree crawler processes collection
+    """Tree crawler processes collection
 
     Public members:
         Methods:
@@ -49,7 +49,7 @@ class CrawlersCollection(object):
     """
 
     def __init__(self, positions, max_depth, first):
-        """Method: override object constructor
+        """Override object constructor
 
         Inputs:
             positions: PositionsStackCollection - puzzle collection of
@@ -68,14 +68,14 @@ class CrawlersCollection(object):
         self.__done = td.Event()
 
     def __supervise(self):
-        """Method: send 'done' event after all crawlers terminate"""
+        """Send 'done' event after all crawlers terminate"""
 
         for crawler in self.__crawlers:
             crawler.join()
         self.__done.set()
 
     def add(self, tree_path):
-        """Method: add a tree crawler to the collection
+        """Add a tree crawler to the collection
 
         Inputs:
             tree_path: list of integer tuples (row, col) - tree root
@@ -101,7 +101,7 @@ class CrawlersCollection(object):
         self.__crawlers.append(crawler)
 
     def start(self):
-        """Method: start all the crawlers and the supervisor thread"""
+        """Start all the crawlers and the supervisor thread"""
 
         # Create the supervisor
         self.__supervisor = td.Thread(target=self.__supervise, daemon=True)
@@ -113,7 +113,7 @@ class CrawlersCollection(object):
         self.__supervisor.start()
 
     def get_solutions(self, solutions):
-        """Method: get solutions from the queue, add them to solutions
+        """Get solutions from the queue, add them to solutions
         collection, until there is no more active crawler
 
         Outputs:
@@ -136,7 +136,7 @@ class CrawlersCollection(object):
 
 
 def crawl_tree(positions, tree_path, board, max_depth, queue, first, found):
-    """Function: Recursively go through the positions tree and combine them to
+    """Recursively go through the positions tree and combine them to
     determine puzzle solutions. Designed to be ran in a separate process.
 
     Inputs:

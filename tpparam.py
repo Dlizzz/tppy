@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Module: Parse, check and return command line arguments
+"""Parse, check and return command line arguments
 
 Name: tpparam.py
 Classes:
@@ -8,8 +8,7 @@ Classes:
     StrictlyPositive: argparse.Action - check that value is strictly positive
     Positive: argparse.Action - check that value is positive or null
     ValidColorName: argparse.Action - check that value is a HTML color name
-Functions:
-    get_parameters: argparse.args - return validated command line arguments
+    TalosArguments: argparse.ArgumentParser - all command line arguments
 Attributes:
     DESCRIPTION_TEXT: const string - description text for help
     EPILOG_TEXT: : const string - epilog text for help
@@ -20,8 +19,8 @@ Dependencies:
     tperrors
 """
 
-import argparse
 import os
+from argparse import Action, ArgumentParser, RawDescriptionHelpFormatter
 
 from PIL import ImageColor
 
@@ -63,8 +62,8 @@ The pieces can be flipped horizontally and vertically.
 """
 
 
-class WriteableDir(argparse.Action):
-    """Class: argparse action to check that a given directory is writeable
+class WriteableDir(Action):
+    """Argparse action to check that a given directory is writeable
 
     Inherit:
         argparse.Actions
@@ -75,7 +74,7 @@ class WriteableDir(argparse.Action):
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Method: test if directory is valid and writeable, raise error if not
+        """Test if directory is valid and writeable, raise error if not
 
         Inputs:
             parser: ArgumentParser - object which contains this action.
@@ -104,8 +103,8 @@ class WriteableDir(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-class ValidColorName(argparse.Action):
-    """Class: argparse action to check that a value is a valid HTML color name
+class ValidColorName(Action):
+    """Argparse action to check that a value is a valid HTML color name
 
     Inherit:
         argparse.Actions
@@ -116,7 +115,7 @@ class ValidColorName(argparse.Action):
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Method: test if value is a valid color name, raise error if not
+        """Test if value is a valid color name, raise error if not
 
         Inputs:
             parser: ArgumentParser - object which contains this action.
@@ -140,8 +139,8 @@ class ValidColorName(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-class StrictlyPositive(argparse.Action):
-    """Class: argparse action to check that a value is strictly positive
+class StrictlyPositive(Action):
+    """Argparse action to check that a value is strictly positive
 
     Inherit:
         argparse.Actions
@@ -152,7 +151,7 @@ class StrictlyPositive(argparse.Action):
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Method: test if value is strictly positive, raise error if not
+        """Test if value is strictly positive, raise error if not
 
         Inputs:
             parser: ArgumentParser - object which contains this action.
@@ -174,8 +173,8 @@ class StrictlyPositive(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-class Positive(argparse.Action):
-    """Class: argparse action to check that a value is positive (null included)
+class Positive(Action):
+    """Argparse action to check that a value is positive (null included)
 
     Inherit:
         argparse.Actions
@@ -186,7 +185,7 @@ class Positive(argparse.Action):
     """
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Method: test if value is positive or null, raise error if not
+        """Test if value is positive or null, raise error if not
 
         Inputs:
             parser: ArgumentParser - object which contains this action.
@@ -208,150 +207,181 @@ class Positive(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def get_parameters():
-    """Function: Parse, check and return command line arguments
+class TalosArguments(ArgumentParser):
+    """Parse the command line, check and provide the arguments
 
-    Return:
-        args: argparse.args - the validated arguments
+    Inherit:
+        argparse.ArgumentParser
+    Private members:
+        Attributes:
+            __group_board: argparse.ArgumentGroup - board parameters
+            __group_pieces: argparse.ArgumentGroup - pieces parameters
+            __group_solutions:argparse.ArgumentGroup - solutions parameters
+    Special methods:
+        __init__: extend ArgumentParser constructor
+        __call__: return the args attributes of ArgumentParser
     Exceptions:
-        TalosArgumentError: invalid argument
+        TalosArgumentError: error in argument parsing
     """
-    # Create parser and define parameters
-    parser = argparse.ArgumentParser(description=DESCRIPTION_TEXT,
-                                     epilog=EPILOG_TEXT,
-                                     formatter_class=argparse.
-                                     RawDescriptionHelpFormatter)
-    group_board = parser.add_argument_group("Board", "Board dimensions")
-    group_pieces = parser.add_argument_group("Pieces", "Pieces list")
-    group_solutions = parser.add_argument_group("Solutions",
-                                                "Solutions output")
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Print progress status on stdout"
-    )
-    parser.add_argument(
-        "--first",
-        action="store_true",
-        help="Stop at first solution found"
-    )
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        help="Save puzzle solving statistics in CSV format"
-    )
-    group_board.add_argument(
-        "--rows",
-        action=StrictlyPositive,
-        help="Number of board rows",
-        type=int,
-        required=True
-    )
-    group_board.add_argument(
-        "--columns",
-        action=StrictlyPositive,
-        help="Number of board columns",
-        type=int,
-        required=True
-    )
-    group_pieces.add_argument(
-        "--square",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of Square shape pieces"
-    )
-    group_pieces.add_argument(
-        "--l-right",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of L right shape pieces"
-    )
-    group_pieces.add_argument(
-        "--l-left",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of L left shape pieces"
-    )
-    group_pieces.add_argument(
-        "--bar",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of Bar shape pieces"
-    )
-    group_pieces.add_argument(
-        "--tee",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of T shape pieces"
-    )
-    group_pieces.add_argument(
-        "--step-right",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of Step right shape pieces"
-    )
-    group_pieces.add_argument(
-        "--step-left",
-        action=Positive,
-        type=int,
-        default=0,
-        help="Number of Step left shape pieces"
-    )
-    group_solutions.add_argument(
-        "--images",
-        action="store_true",
-        help="Output solutions as png images"
-    )
-    group_solutions.add_argument(
-        "--output-dir",
-        action=WriteableDir,
-        default=os.getcwd(),
-        help="Directory where to output png images"
-    )
-    group_solutions.add_argument(
-        "--cell-size",
-        action=StrictlyPositive,
-        type=int,
-        default=100,
-        help="Size in pixels of one cell of the board"
-    )
-    group_solutions.add_argument(
-        "--shape-color",
-        action=ValidColorName,
-        default="Yellow",
-        help="Color name (HTML) of the shape color"
-    )
-    group_solutions.add_argument(
-        "--fill-color",
-        action=ValidColorName,
-        default="DarkMagenta",
-        help="Color name (HTML) of the fill color"
-    )
 
-    # Get parameters
-    args = parser.parse_args()
+    def __init__(self):
+        """Extend ArgumentParser constructor. Parse and check command line
+        arguments
 
-    # Check_parameters
-    if (args.rows * args.columns) != (
-        (
-            args.square
-            + args.l_right
-            + args.l_left
-            + args.bar
-            + args.tee
-            + args.step_right
-            + args.step_left
-        ) * 4
-    ):
-        raise TalosArgumentError(
-            "Board size must equal sum of pieces size (4)",
-            "--rows x --columns"
+        Exceptions:
+            TalosArgumentError: invalid argument
+        """
+        # Init parser from super class
+        super().__init__(
+            description=DESCRIPTION_TEXT,
+            epilog=EPILOG_TEXT,
+            formatter_class=RawDescriptionHelpFormatter
+        )
+        self.__group_board = super().add_argument_group(
+            "Board",
+            "Board dimensions"
+        )
+        self.__group_pieces = super().add_argument_group(
+            "Pieces",
+            "Pieces list"
+        )
+        self.__group_solutions = super().add_argument_group(
+            "Solutions",
+            "Solutions output"
+        )
+        super().add_argument(
+            "--verbose",
+            action="store_true",
+            help="Print progress status on stdout"
+        )
+        super().add_argument(
+            "--first",
+            action="store_true",
+            help="Stop at first solution found"
+        )
+        super().add_argument(
+            "--stats",
+            action="store_true",
+            help="Save puzzle solving statistics in CSV format"
+        )
+        self.__group_board.add_argument(
+            "--rows",
+            action=StrictlyPositive,
+            help="Number of board rows",
+            type=int,
+            required=True
+        )
+        self.__group_board.add_argument(
+            "--columns",
+            action=StrictlyPositive,
+            help="Number of board columns",
+            type=int,
+            required=True
+        )
+        self.__group_pieces.add_argument(
+            "--square",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of Square shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--l-right",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of L right shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--l-left",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of L left shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--bar",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of Bar shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--tee",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of T shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--step-right",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of Step right shape pieces"
+        )
+        self.__group_pieces.add_argument(
+            "--step-left",
+            action=Positive,
+            type=int,
+            default=0,
+            help="Number of Step left shape pieces"
+        )
+        self.__group_solutions.add_argument(
+            "--images",
+            action="store_true",
+            help="Output solutions as png images"
+        )
+        self.__group_solutions.add_argument(
+            "--output-dir",
+            action=WriteableDir,
+            default=os.getcwd(),
+            help="Directory where to output png images"
+        )
+        self.__group_solutions.add_argument(
+            "--cell-size",
+            action=StrictlyPositive,
+            type=int,
+            default=100,
+            help="Size in pixels of one cell of the board"
+        )
+        self.__group_solutions.add_argument(
+            "--shape-color",
+            action=ValidColorName,
+            default="Yellow",
+            help="Color name (HTML) of the shape color"
+        )
+        self.__group_solutions.add_argument(
+            "--fill-color",
+            action=ValidColorName,
+            default="DarkMagenta",
+            help="Color name (HTML) of the fill color"
         )
 
-    return args
+        # Get parameters
+        self.__args = super().parse_args()
+
+        # Check_parameters
+        if (self.__args.rows * self.__args.columns) != (
+            (
+                self.__args.square
+                + self.__args.l_right
+                + self.__args.l_left
+                + self.__args.bar
+                + self.__args.tee
+                + self.__args.step_right
+                + self.__args.step_left
+            ) * 4
+        ):
+            raise TalosArgumentError(
+                "Board size must equal sum of pieces size (4)",
+                "--rows x --columns"
+            )
+
+    def __call__(self):
+        """Class is callable. Return the args component
+
+        Return: argparse.args
+        """
+
+        return self.__args

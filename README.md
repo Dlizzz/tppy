@@ -1,4 +1,4 @@
-﻿# talos-puzzle
+﻿# tppy
 
 This python 3 application solves the Sigil puzzles in Talos Principle game from Croteam: <http://www.croteam.com/talosprinciple/>
 

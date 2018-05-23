@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Module: Exception classes definition
+"""Exceptions classes definition
 
 Name: tperrors.py
 Exception classes:
-    TalosError: base class for application exceptions
+    TalosError: base class for tppy exceptions
     TalosArgumentError: errors in command line arguments
     TalosFileSystemError: errors in saving an image or stats
 """
 
 
 class TalosError(Exception):
-    """Exception class: base class for application exceptions
+    """Base class for tppy exceptions
 
     Inherit:
         Exception
@@ -34,7 +34,7 @@ class TalosError(Exception):
 
 
 class TalosArgumentError(TalosError):
-    """Exception class: command line arguments arrors
+    """Command line arguments parsing exceptions
 
     Inherit:
         TalosError
@@ -47,7 +47,7 @@ class TalosArgumentError(TalosError):
     """
 
     def __init__(self, message, argument):
-        """Method: extend Exception constructor
+        """Extend TalosError constructor
 
         Inputs:
             argument: string - the faulty argument
@@ -59,7 +59,7 @@ class TalosArgumentError(TalosError):
 
 
 class TalosFileSystemError(TalosError):
-    """Exception class: errors in writing on the filesystem.
+    """Filesystem access exceptions
 
     Inherit:
         TalosError
@@ -71,7 +71,7 @@ class TalosFileSystemError(TalosError):
     """
 
     def __init__(self, message, syserror):
-        """Method: extend TalosError constructor
+        """Extend TalosError constructor
 
         Inputs:
             message: string - explanation of the error

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Module: Define Piece and PiecesCollection
+"""Define Piece and PiecesCollection
 
 Name: tppieces.py
 Classes:
@@ -16,12 +16,14 @@ import numpy
 
 
 class PiecesCollection(object):
-    """Class: define a collection of pieces to solve the puzzle
+    """Define a collection of pieces to solve the puzzle
 
     Public members:
         Methods:
             append: append a existing piece to the collection
     Private members:
+        Attributes:
+            __stack: list of Piece - store the pieces
         Methods:
             __supervise: watch all crawler processes for termination
     Special methods:
@@ -31,34 +33,46 @@ class PiecesCollection(object):
     """
 
     def __init__(self):
-        """Constructor: initialize the pieces stack"""
+        """Initialize the pieces stack"""
 
         self.__stack = []
 
     def __len__(self):
-        """Method: provide len method, # of items in the collection"""
+        """Provide len method, # of items in the collection
+
+        Return: integer - # items in the collection 
+        """
 
         return len(self.__stack)
 
     def __getitem__(self, index):
-        """Method: provide [] operator, collection is iterable"""
+        """Provide [] operator, collection is iterable
+
+        Inputs:
+            index: integer - index of the requested item
+        Return: Piece - the requested piece
+        """
 
         return self.__stack[index]
 
     def append(self, piece):
-        """Method: append given piece to the collection"""
+        """Append given piece to the collection
+
+        Inputs:
+            piece: Piece - piece to append to the collection
+        """
 
         self.__stack.append(piece)
 
 
 class Piece(object):
-    """Class: define a piece
+    """Define a piece
 
     Public members:
-        Methods:
-            name: property, string - name of the piece
-            label: property, string - label of the piece
-            patterns: property, list of numpy arrays - patterns of the piece
+        Properties:
+            name: string - name of the piece
+            label: string - label of the piece
+            patterns: list of numpy arrays - patterns of the piece
     Private members:
         Attributes:
             __name: string - name of the piece
@@ -69,12 +83,12 @@ class Piece(object):
     """
 
     def __init__(self, name, label, pattern, rotations_count=1):
-        """Constructor: create the piece, with its patterns
+        """Create the piece, with its patterns
 
         Inputs:
             name: string - name of the piece
             label: string - label of the piece
-            pattern: list of tuples - initial pattern of the piece 
+            pattern: list of tuples - initial pattern of the piece
             rotations_count: integer - # of 90° rotations to do to obtain all
                 the patterns of the piece
         """
@@ -98,19 +112,19 @@ class Piece(object):
 
     @property
     def name(self):
-        """Property: string - name of piece"""
+        """string - name of piece"""
 
         return self.__name
 
     @property
     def label(self):
-        """Property: string - label of piece"""
+        """string - label of piece"""
 
         return self.__label
 
     @property
     def patterns(self):
-        """Property: list of numpy arrays - patterns of piece"""
+        """list of numpy arrays - patterns of piece"""
 
         return self.__patterns
 

@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-"""Module: Entry point of talospuzzle application
+"""Entry point of talospuzzle application
 
-Name: talospuzzle.py
+Name: tppy.py
 Comments:
     Puzzle board is made of Rows x Columns cells.
     Column is the horizontal dimension. Row is the vertical dimension.
@@ -72,7 +72,7 @@ Dependencies:
 
 import multiprocessing as mp
 
-from tpparam import get_parameters
+from tpparam import TalosArguments
 from tppieces import pieces_set
 from tppuzzle import Puzzle
 from tperrors import TalosArgumentError, TalosFileSystemError
@@ -85,32 +85,32 @@ __license__ = "LGPL-3.0"
 
 
 def main():
-    """Function: Create puzzle, add pieces, solve and display solutions"""
+    """Create puzzle, add pieces, solve and display solutions"""
 
     # Get puzzle parameters from command line
     try:
-        args = get_parameters()
+        args = TalosArguments()
     except TalosArgumentError as err:
         print("Argument error: {} - {}".format(err.argument, err.message))
         exit(1)
 
     # Create board
-    puzzle = Puzzle(args)
+    puzzle = Puzzle(args())
 
     # Add pieces, from pieces set, to the puzzle
-    for _ in range(args.square):
+    for _ in range(args().square):
         puzzle.add_piece(pieces_set["Square"])
-    for _ in range(args.l_right):
+    for _ in range(args().l_right):
         puzzle.add_piece(pieces_set["L Right"])
-    for _ in range(args.l_left):
+    for _ in range(args().l_left):
         puzzle.add_piece(pieces_set["L Left"])
-    for _ in range(args.bar):
+    for _ in range(args().bar):
         puzzle.add_piece(pieces_set["Bar"])
-    for _ in range(args.tee):
+    for _ in range(args().tee):
         puzzle.add_piece(pieces_set["Tee"])
-    for _ in range(args.step_right):
+    for _ in range(args().step_right):
         puzzle.add_piece(pieces_set["Step Right"])
-    for _ in range(args.step_left):
+    for _ in range(args().step_left):
         puzzle.add_piece(pieces_set["Step Left"])
 
     # Solve the puzzle

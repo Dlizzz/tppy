@@ -11,7 +11,7 @@
             "stopOnEntry": false,
             "console": "integratedTerminal",
             "pythonPath": "${config:python.pythonPath}",
-            "program": "${workspaceFolder}/talospuzzle.py",
+            "program": "${workspaceFolder}/tppy.py",
             "args": [
                 "--verbose",
                 "--first",
